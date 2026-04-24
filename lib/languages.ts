@@ -1,4 +1,4 @@
-export type LanguageCode = "de" | "fr" | "ar" | "en" | "es" | "it" | "tr";
+export type LanguageCode = "de" | "fr" | "ar" | "en" | "es" | "it" | "tr" | "sr";
 
 export type LanguageOption = {
   code: LanguageCode;
@@ -14,7 +14,8 @@ export const languages: LanguageOption[] = [
   { code: "en", label: "Englisch", nativeName: "English", speechTag: "en-US" },
   { code: "es", label: "Spanisch", nativeName: "Español", speechTag: "es-ES" },
   { code: "it", label: "Italienisch", nativeName: "Italiano", speechTag: "it-IT" },
-  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR" }
+  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR" },
+  { code: "sr", label: "Serbisch", nativeName: "Srpski", speechTag: "sr-RS" }
 ];
 
 export function getLanguageLabel(code: string) {
