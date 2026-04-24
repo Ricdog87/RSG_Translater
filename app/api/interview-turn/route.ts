@@ -4,6 +4,7 @@ import type { Speaker, TranslateResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
+export const preferredRegion = "fra1";
 
 const validLanguageCodes = new Set(languages.map((language) => language.code));
 
@@ -34,7 +35,54 @@ function isSpeaker(value: unknown): value is Speaker {
 }
 
 function jsonError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+  return NextResponse.json(
+    { error: message },
+    {
+      status,
+      headers: {
+        "Cache-Control": "no-store"
+      }
+    }
+  );
+}
+
+function jsonSuccess(payload: TranslateResponse) {
+  return NextResponse.json(payload, {
+    headers: {
+      "Cache-Control": "no-store"
+    }
+  });
+}
+
+async function readJsonBody(request: Request) {
+  try {
+    return (await request.json()) as TranslateRequest;
+  } catch {
+    return null;
+  }
+}
+
+async function readOpenRouterResponse(response: Response) {
+  const raw = await response.text();
+
+  if (!raw.trim()) {
+    return {
+      data: null,
+      raw
+    };
+  }
+
+  try {
+    return {
+      data: JSON.parse(raw) as OpenRouterResponse,
+      raw
+    };
+  } catch {
+    return {
+      data: null,
+      raw
+    };
+  }
 }
 
 export async function POST(request: Request) {
@@ -42,7 +90,12 @@ export async function POST(request: Request) {
     return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
   }
 
-  const body = (await request.json()) as TranslateRequest;
+  const body = await readJsonBody(request);
+
+  if (!body) {
+    return jsonError("Ungueltige Anfrage. Bitte erneut versuchen.");
+  }
+
   const originalText = body.originalText?.trim();
 
   if (!isSpeaker(body.speaker) || !isLanguageCode(body.languageA) || !isLanguageCode(body.languageB)) {
@@ -57,7 +110,8 @@ export async function POST(request: Request) {
   const targetLanguage = body.speaker === "customer" ? body.languageB : body.languageA;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const openRouterUrl = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions";
+    const response = await fetch(openRouterUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -68,6 +122,9 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini",
         temperature: 0.2,
+        provider: {
+          data_collection: "deny"
+        },
         messages: [
           {
             role: "system",
@@ -82,13 +139,14 @@ export async function POST(request: Request) {
       })
     });
 
-    const data = (await response.json()) as OpenRouterResponse;
+    const { data, raw } = await readOpenRouterResponse(response);
 
     if (!response.ok) {
-      return jsonError(data.error?.message ?? "OpenRouter konnte die Uebersetzung nicht erzeugen.", response.status);
+      const providerMessage = data?.error?.message ?? raw.slice(0, 240);
+      return jsonError(providerMessage || "OpenRouter konnte die Uebersetzung nicht erzeugen.", response.status);
     }
 
-    const translatedText = data.choices?.[0]?.message?.content?.trim();
+    const translatedText = data?.choices?.[0]?.message?.content?.trim();
 
     if (!translatedText) {
       return jsonError("Die Uebersetzung konnte nicht erzeugt werden.", 502);
@@ -103,9 +161,9 @@ export async function POST(request: Request) {
       provider: "openrouter"
     };
 
-    return NextResponse.json(payload);
+    return jsonSuccess(payload);
   } catch (error) {
-    console.error(error);
+    console.error("Interview turn failed", error instanceof Error ? error.message : "unknown error");
     return jsonError("Der Interview-Turn konnte nicht verarbeitet werden.", 500);
   }
 }

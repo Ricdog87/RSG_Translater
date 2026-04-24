@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Languages, LoaderCircle, RotateCcw, ShieldCheck } from "lucide-react";
+import { Download, Keyboard, Languages, LoaderCircle, LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { PushToTalkButton } from "@/components/PushToTalkButton";
 import { TranscriptList } from "@/components/TranscriptList";
@@ -28,6 +28,12 @@ export default function Home() {
   const [processingSpeaker, setProcessingSpeaker] = useState<Speaker | null>(null);
   const [status, setStatus] = useState("Bereit fuer das Interview.");
   const [error, setError] = useState<string | null>(null);
+  const [translationConsent, setTranslationConsent] = useState(false);
+  const [speechConsent, setSpeechConsent] = useState(false);
+  const [manualText, setManualText] = useState<Record<Speaker, string>>({
+    customer: "",
+    candidate: ""
+  });
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const transcriptRef = useRef("");
@@ -42,6 +48,10 @@ export default function Home() {
     setError(null);
 
     try {
+      if (!speechConsent) {
+        throw new Error("Spracheingabe ist deaktiviert. Bitte Datenschutz-Hinweis bestaetigen oder Text manuell eingeben.");
+      }
+
       const Recognition = getSpeechRecognitionConstructor();
 
       if (!Recognition) {
@@ -120,10 +130,39 @@ export default function Home() {
     recognition.stop();
   }
 
+  async function readApiResponse(response: Response) {
+    const raw = await response.text();
+
+    if (!raw.trim()) {
+      return {
+        data: null,
+        error: "Leere Antwort vom Server. Bitte Verbindung und API-Konfiguration pruefen."
+      };
+    }
+
+    try {
+      return {
+        data: JSON.parse(raw) as TranslateResponse | { error?: string },
+        error: null
+      };
+    } catch {
+      return {
+        data: null,
+        error: raw.slice(0, 240) || "Serverantwort konnte nicht gelesen werden."
+      };
+    }
+  }
+
   async function submitTranscript(speaker: Speaker, originalText: string) {
     if (!originalText) {
       setStatus("Bereit fuer das Interview.");
       setError("Es wurde keine Sprache erkannt. Bitte Taste gedrueckt halten und erneut sprechen.");
+      return;
+    }
+
+    if (!translationConsent) {
+      setStatus("Bereit fuer das Interview.");
+      setError("Bitte zuerst bestaetigen, dass erkannter Text zur Uebersetzung an OpenRouter gesendet werden darf.");
       return;
     }
 
@@ -144,10 +183,14 @@ export default function Home() {
         })
       });
 
-      const data = (await response.json()) as { error?: string };
+      const { data, error: parseError } = await readApiResponse(response);
+
+      if (parseError || !data) {
+        throw new Error(parseError ?? "Uebersetzung fehlgeschlagen.");
+      }
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Uebersetzung fehlgeschlagen.");
+        throw new Error("error" in data ? data.error : "Uebersetzung fehlgeschlagen.");
       }
 
       const result = data as TranslateResponse;
@@ -173,6 +216,21 @@ export default function Home() {
     } finally {
       setProcessingSpeaker(null);
     }
+  }
+
+  function submitManualTranscript(speaker: Speaker) {
+    const text = manualText[speaker].trim();
+
+    if (!text) {
+      setError("Bitte zuerst Text eingeben.");
+      return;
+    }
+
+    setManualText((current) => ({
+      ...current,
+      [speaker]: ""
+    }));
+    void submitTranscript(speaker, text);
   }
 
   function speak(text: string, language: LanguageCode) {
@@ -237,10 +295,40 @@ export default function Home() {
               <LanguagePicker id="language-b" label="Sprache Kandidat" value={languageB} onChange={setLanguageB} />
             </div>
 
+            <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <LockKeyhole className="size-5 text-teal-700" aria-hidden="true" />
+                <p className="text-sm font-black text-slate-950">Datenschutzmodus</p>
+              </div>
+              <label className="flex gap-3 text-sm leading-6 text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={translationConsent}
+                  onChange={(event) => setTranslationConsent(event.target.checked)}
+                  className="mt-1 size-4 accent-teal-700"
+                />
+                <span>
+                  Ich habe die Teilnehmenden informiert und darf erkannten Interviewtext zur Uebersetzung an OpenRouter senden.
+                </span>
+              </label>
+              <label className="mt-3 flex gap-3 text-sm leading-6 text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={speechConsent}
+                  onChange={(event) => setSpeechConsent(event.target.checked)}
+                  className="mt-1 size-4 accent-teal-700"
+                />
+                <span>
+                  Spracheingabe aktivieren. Je nach Browser kann Audio zur Spracherkennung vom Browser-Anbieter verarbeitet werden.
+                </span>
+              </label>
+            </div>
+
             <button
               type="button"
               onClick={() => setMode("interview")}
-              className="mt-6 h-16 w-full rounded-lg bg-slate-950 px-5 text-lg font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800 active:scale-[0.99]"
+              disabled={!translationConsent}
+              className="mt-6 h-16 w-full rounded-lg bg-slate-950 px-5 text-lg font-bold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Interview starten
             </button>
@@ -248,7 +336,10 @@ export default function Home() {
 
           <div className="mt-5 flex items-start gap-3 rounded-lg border border-teal-900/10 bg-teal-50/80 p-4 text-sm leading-6 text-teal-950">
             <ShieldCheck className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            <p>Spracheingabe und Audioausgabe laufen im Browser. An die API wird nur erkannter Text zur Uebersetzung gesendet.</p>
+            <p>
+              Standardmaessig wird kein Audio an den App-Server gesendet und es wird nichts gespeichert. Fuer DSGVO-Tests am saubersten:
+              manuelle Texteingabe nutzen oder einen geprueften EU-STT-Anbieter anbinden.
+            </p>
           </div>
         </section>
       </main>
@@ -281,7 +372,7 @@ export default function Home() {
           label="Kunde spricht"
           hint={`Aufnehmen in ${getLanguageLabel(languageA)}`}
           active={activeSpeaker === "customer"}
-          disabled={Boolean(activeSpeaker || processingSpeaker)}
+          disabled={Boolean(activeSpeaker || processingSpeaker) || !speechConsent}
           onStart={startRecording}
           onStop={stopRecording}
         />
@@ -290,10 +381,41 @@ export default function Home() {
           label="Kandidat spricht"
           hint={`Aufnehmen in ${getLanguageLabel(languageB)}`}
           active={activeSpeaker === "candidate"}
-          disabled={Boolean(activeSpeaker || processingSpeaker)}
+          disabled={Boolean(activeSpeaker || processingSpeaker) || !speechConsent}
           onStart={startRecording}
           onStop={stopRecording}
         />
+      </section>
+
+      <section className="no-print mt-4 grid gap-3 sm:grid-cols-2">
+        {(["customer", "candidate"] as Speaker[]).map((speaker) => (
+          <div key={speaker} className="rounded-lg border border-white/80 bg-white/85 p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <Keyboard className="size-5 text-teal-700" aria-hidden="true" />
+              <p className="text-sm font-black text-slate-950">{speakerLabel(speaker)} Text</p>
+            </div>
+            <textarea
+              value={manualText[speaker]}
+              onChange={(event) =>
+                setManualText((current) => ({
+                  ...current,
+                  [speaker]: event.target.value
+                }))
+              }
+              rows={3}
+              placeholder={`Text in ${getLanguageLabel(speaker === "customer" ? languageA : languageB)} eingeben`}
+              className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-base text-slate-950 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15"
+            />
+            <button
+              type="button"
+              onClick={() => submitManualTranscript(speaker)}
+              disabled={processingSpeaker !== null || !translationConsent}
+              className="mt-3 h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-bold text-white shadow-sm disabled:opacity-50"
+            >
+              Uebersetzen
+            </button>
+          </div>
+        ))}
       </section>
 
       <section className="no-print mt-4 rounded-lg border border-white/80 bg-white/85 p-4 shadow-sm">
@@ -302,6 +424,9 @@ export default function Home() {
           <p className="text-sm font-bold text-slate-800">{status}</p>
         </div>
         {error ? <p className="mt-2 text-sm font-semibold text-rose-700">{error}</p> : null}
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Keine Speicherung im Backend. Zur Uebersetzung wird nur der angezeigte Text gesendet, kein Audio und kein Verlauf.
+        </p>
       </section>
 
       <section className="print-surface mt-5 rounded-lg border border-white/80 bg-white/72 p-4 shadow-xl shadow-slate-900/8 backdrop-blur sm:p-5">

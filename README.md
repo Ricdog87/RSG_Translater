@@ -6,6 +6,8 @@ Mobile-first MVP fuer eine Push-to-talk Simultan-Uebersetzungs-App in Recruiting
 
 - Startscreen mit Auswahl der Kunden- und Kandidatensprache
 - Interview-Screen mit zwei grossen Push-to-talk Buttons
+- Datenschutzmodus mit expliziter Zustimmung vor Uebersetzung und optionaler Spracheingabe
+- Manuelle Texteingabe als datenschutzfreundlicher Standard ohne Browser-Spracherkennung
 - Browser Speech-to-Text pro Aufnahme
 - Uebersetzung in die jeweils andere Sprache
 - Text-to-Speech Wiedergabe der Uebersetzung
@@ -40,6 +42,7 @@ Dann in `.env.local` den API-Key setzen:
 ```bash
 OPENROUTER_API_KEY=sk-or-v1-...
 OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
 ```
 
 ## Entwicklung starten
@@ -70,6 +73,23 @@ npm run start
 3. Deploy starten.
 
 Die API Route ist serverseitig, der OpenRouter-Key wird nicht an den Browser ausgeliefert.
+
+## Datenschutz-MVP
+
+- Das Backend speichert keine Interviewdaten.
+- API-Antworten werden mit `Cache-Control: no-store` ausgeliefert.
+- Die Vercel Serverless Function ist auf Frankfurt (`fra1`) ausgerichtet.
+- Es wird kein Audio an den App-Server gesendet.
+- Im Standard-Workflow kann Text manuell eingegeben werden.
+- Push-to-talk ist optional und muss separat bestaetigt werden. Je nach Browser kann die Web Speech API Audio durch den Browser-Anbieter verarbeiten.
+- Zur Uebersetzung wird nur der erkannte oder eingegebene Text an OpenRouter gesendet.
+- OpenRouter wird mit `provider.data_collection = "deny"` eingeschraenkt, sodass nur Provider genutzt werden sollen, die keine Nutzerdaten sammeln.
+- Der OpenRouter EU-Endpunkt kann ueber `OPENROUTER_BASE_URL=https://eu.openrouter.ai/api/v1/chat/completions` aktiviert werden, wenn er fuer den Account freigeschaltet ist.
+- Fuer produktive DSGVO-Nutzung sollten AVV/DPA, Datenschutzhinweise, TOMs, Aufbewahrungsregeln und ein gepruefter EU-STT/LLM-Anbieter verbindlich geklaert werden.
+
+## Hostinger / EU-Hosting
+
+Hostinger mit EU-Server kann fuer das App-Hosting helfen. Fuer diese Next.js API Route brauchst du allerdings Node.js/Server-Hosting oder einen VPS. Reines statisches Webhosting reicht nicht fuer die serverseitige OpenRouter-Proxy-Route. Datenschutzrechtlich entscheidend ist ausserdem nicht nur der Serverstandort, sondern auch, welche Unterauftragsverarbeiter Text oder Audio verarbeiten.
 
 ## Projektstruktur
 
