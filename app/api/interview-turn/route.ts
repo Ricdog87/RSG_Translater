@@ -1,18 +1,35 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { getLanguageLabel, languages, type LanguageCode } from "@/lib/languages";
 import type { Speaker, TranslateResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 30;
 
 const validLanguageCodes = new Set(languages.map((language) => language.code));
 
-function isLanguageCode(value: FormDataEntryValue | null): value is LanguageCode {
+type TranslateRequest = {
+  speaker?: Speaker;
+  originalText?: string;
+  languageA?: LanguageCode;
+  languageB?: LanguageCode;
+};
+
+type OpenRouterResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
+};
+
+function isLanguageCode(value: unknown): value is LanguageCode {
   return typeof value === "string" && validLanguageCodes.has(value as LanguageCode);
 }
 
-function isSpeaker(value: FormDataEntryValue | null): value is Speaker {
+function isSpeaker(value: unknown): value is Speaker {
   return value === "customer" || value === "candidate";
 }
 
@@ -21,84 +38,69 @@ function jsonError(message: string, status = 400) {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.OPENAI_API_KEY) {
-    return jsonError("OPENAI_API_KEY ist nicht konfiguriert.", 500);
+  if (!process.env.OPENROUTER_API_KEY) {
+    return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
+  const body = (await request.json()) as TranslateRequest;
+  const originalText = body.originalText?.trim();
 
-  const formData = await request.formData();
-  const audio = formData.get("audio");
-  const speaker = formData.get("speaker");
-  const languageA = formData.get("languageA");
-  const languageB = formData.get("languageB");
-
-  if (!(audio instanceof File) || audio.size === 0) {
-    return jsonError("Es wurde keine Audioaufnahme uebergeben.");
-  }
-
-  if (!isSpeaker(speaker) || !isLanguageCode(languageA) || !isLanguageCode(languageB)) {
+  if (!isSpeaker(body.speaker) || !isLanguageCode(body.languageA) || !isLanguageCode(body.languageB)) {
     return jsonError("Ungueltige Sprecher- oder Sprachangaben.");
   }
 
-  const sourceLanguage = speaker === "customer" ? languageA : languageB;
-  const targetLanguage = speaker === "customer" ? languageB : languageA;
+  if (!originalText) {
+    return jsonError("Es wurde kein erkannter Text uebergeben.");
+  }
+
+  const sourceLanguage = body.speaker === "customer" ? body.languageA : body.languageB;
+  const targetLanguage = body.speaker === "customer" ? body.languageB : body.languageA;
 
   try {
-    const transcription = await openai.audio.transcriptions.create({
-      file: audio,
-      model: "gpt-4o-mini-transcribe",
-      language: sourceLanguage,
-      prompt: `Recruiting interview. Transcribe clearly in ${getLanguageLabel(sourceLanguage)}.`
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://rsg-translater.vercel.app",
+        "X-Title": "RSG Translate"
+      },
+      body: JSON.stringify({
+        model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini",
+        temperature: 0.2,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a professional recruiting interview interpreter. Translate faithfully, preserve names, job titles, dates, and numbers. Return only the translated text."
+          },
+          {
+            role: "user",
+            content: `Translate from ${getLanguageLabel(sourceLanguage)} to ${getLanguageLabel(targetLanguage)}:\n\n${originalText}`
+          }
+        ]
+      })
     });
 
-    const originalText = transcription.text?.trim();
+    const data = (await response.json()) as OpenRouterResponse;
 
-    if (!originalText) {
-      return jsonError("Keine Sprache erkannt. Bitte erneut aufnehmen.");
+    if (!response.ok) {
+      return jsonError(data.error?.message ?? "OpenRouter konnte die Uebersetzung nicht erzeugen.", response.status);
     }
 
-    const translation = await openai.responses.create({
-      model: "gpt-4o-mini",
-      input: [
-        {
-          role: "system",
-          content:
-            "You are a professional recruiting interview interpreter. Translate faithfully, preserve names, job titles, dates, and numbers. Return only the translated text."
-        },
-        {
-          role: "user",
-          content: `Translate from ${getLanguageLabel(sourceLanguage)} to ${getLanguageLabel(targetLanguage)}:\n\n${originalText}`
-        }
-      ],
-      temperature: 0.2
-    });
-
-    const translatedText = translation.output_text.trim();
+    const translatedText = data.choices?.[0]?.message?.content?.trim();
 
     if (!translatedText) {
       return jsonError("Die Uebersetzung konnte nicht erzeugt werden.", 502);
     }
 
-    const speech = await openai.audio.speech.create({
-      model: "gpt-4o-mini-tts",
-      voice: speaker === "customer" ? "marin" : "cedar",
-      input: translatedText,
-      instructions: `Speak naturally and clearly in ${getLanguageLabel(targetLanguage)} for a recruiting interview.`
-    });
-
-    const audioBuffer = Buffer.from(await speech.arrayBuffer());
-
     const payload: TranslateResponse = {
-      speaker,
+      speaker: body.speaker,
       originalText,
       translatedText,
       sourceLanguage,
       targetLanguage,
-      audioBase64: audioBuffer.toString("base64"),
-      audioMimeType: "audio/mpeg"
+      provider: "openrouter"
     };
 
     return NextResponse.json(payload);

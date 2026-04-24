@@ -13,6 +13,5 @@ export type TranscriptEntry = {
 };
 
 export type TranslateResponse = Omit<TranscriptEntry, "id" | "createdAt"> & {
-  audioBase64: string;
-  audioMimeType: "audio/mpeg";
+  provider: "openrouter";
 };

@@ -5,12 +5,11 @@ import { Download, Languages, LoaderCircle, RotateCcw, ShieldCheck } from "lucid
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { PushToTalkButton } from "@/components/PushToTalkButton";
 import { TranscriptList } from "@/components/TranscriptList";
-import { getLanguageLabel, type LanguageCode } from "@/lib/languages";
+import { getLanguageLabel, getSpeechTag, type LanguageCode } from "@/lib/languages";
 import type { Speaker, TranslateResponse, TranscriptEntry } from "@/lib/types";
+import { getSpeechRecognitionConstructor, type SpeechRecognitionLike } from "@/lib/web-speech";
 
 type AppMode = "setup" | "interview";
-
-const audioMimeType = "audio/webm";
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -30,12 +29,12 @@ export default function Home() {
   const [status, setStatus] = useState("Bereit fuer das Interview.");
   const [error, setError] = useState<string | null>(null);
 
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const transcriptRef = useRef("");
   const speakerRef = useRef<Speaker | null>(null);
+  const shouldSubmitRef = useRef(false);
 
-  async function startRecording(speaker: Speaker) {
+  function startRecording(speaker: Speaker) {
     if (activeSpeaker || processingSpeaker) {
       return;
     }
@@ -43,86 +42,106 @@ export default function Home() {
     setError(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      const Recognition = getSpeechRecognitionConstructor();
 
-      const mimeType = MediaRecorder.isTypeSupported(audioMimeType) ? audioMimeType : "";
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      if (!Recognition) {
+        throw new Error("Dieser Browser unterstuetzt Spracheingabe nicht. Bitte Chrome oder Edge verwenden.");
+      }
 
-      chunksRef.current = [];
-      streamRef.current = stream;
-      recorderRef.current = recorder;
+      const recognition = new Recognition();
+      const sourceLanguage = speaker === "customer" ? languageA : languageB;
+
+      transcriptRef.current = "";
+      recognitionRef.current = recognition;
       speakerRef.current = speaker;
+      shouldSubmitRef.current = false;
 
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
+      recognition.lang = getSpeechTag(sourceLanguage);
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event) => {
+        let finalText = "";
+
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+
+          if (result.isFinal) {
+            finalText += result[0].transcript;
+          }
+        }
+
+        if (finalText.trim()) {
+          transcriptRef.current = `${transcriptRef.current} ${finalText}`.trim();
         }
       };
 
-      recorder.onstop = () => {
-        void submitRecording();
+      recognition.onerror = (event) => {
+        setError(`Spracheingabe fehlgeschlagen: ${event.error}`);
+        setStatus("Bereit fuer das Interview.");
+        setActiveSpeaker(null);
+        setProcessingSpeaker(null);
       };
 
-      recorder.start();
+      recognition.onend = () => {
+        const shouldSubmit = shouldSubmitRef.current;
+        const text = transcriptRef.current.trim();
+        const currentSpeaker = speakerRef.current;
+
+        recognitionRef.current = null;
+        speakerRef.current = null;
+        shouldSubmitRef.current = false;
+        setActiveSpeaker(null);
+
+        if (shouldSubmit && currentSpeaker) {
+          void submitTranscript(currentSpeaker, text);
+        }
+      };
+
+      recognition.start();
       setActiveSpeaker(speaker);
       setStatus(`${speakerLabel(speaker)} spricht...`);
-    } catch {
-      setError("Mikrofonzugriff wurde verweigert oder ist nicht verfuegbar.");
+    } catch (caughtError) {
+      const message = caughtError instanceof Error ? caughtError.message : "Mikrofonzugriff ist nicht verfuegbar.";
+      setError(message);
       setStatus("Bereit fuer das Interview.");
-      stopStream();
     }
   }
 
   function stopRecording() {
-    const recorder = recorderRef.current;
+    const recognition = recognitionRef.current;
 
-    if (recorder && recorder.state === "recording") {
-      recorder.stop();
+    if (!recognition) {
+      return;
     }
+
+    shouldSubmitRef.current = true;
+    recognition.stop();
   }
 
-  function stopStream() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-  }
-
-  async function submitRecording() {
-    const speaker = speakerRef.current;
-    const blob = new Blob(chunksRef.current, {
-      type: recorderRef.current?.mimeType || audioMimeType
-    });
-
-    setActiveSpeaker(null);
-    stopStream();
-    recorderRef.current = null;
-    speakerRef.current = null;
-    chunksRef.current = [];
-
-    if (!speaker || blob.size < 1200) {
+  async function submitTranscript(speaker: Speaker, originalText: string) {
+    if (!originalText) {
       setStatus("Bereit fuer das Interview.");
-      setError("Die Aufnahme war zu kurz. Bitte Taste gedrueckt halten und erneut sprechen.");
+      setError("Es wurde keine Sprache erkannt. Bitte Taste gedrueckt halten und erneut sprechen.");
       return;
     }
 
     setProcessingSpeaker(speaker);
-    setStatus("Transkribiere, uebersetze und spiele Audio ab...");
+    setStatus("Uebersetze mit OpenRouter und spiele Audio ab...");
 
     try {
-      const formData = new FormData();
-      formData.append("audio", new File([blob], "interview-turn.webm", { type: blob.type || audioMimeType }));
-      formData.append("speaker", speaker);
-      formData.append("languageA", languageA);
-      formData.append("languageB", languageB);
-
       const response = await fetch("/api/interview-turn", {
         method: "POST",
-        body: formData
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          speaker,
+          originalText,
+          languageA,
+          languageB
+        })
       });
 
       const data = (await response.json()) as { error?: string };
@@ -146,9 +165,7 @@ export default function Home() {
       setEntries((current) => [entry, ...current]);
       setStatus("Uebersetzung wird abgespielt.");
 
-      const audio = new Audio(`data:${result.audioMimeType};base64,${result.audioBase64}`);
-      audio.onended = () => setStatus("Bereit fuer die naechste Antwort.");
-      await audio.play();
+      speak(result.translatedText, result.targetLanguage);
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "Unbekannter Fehler.";
       setError(message);
@@ -156,6 +173,23 @@ export default function Home() {
     } finally {
       setProcessingSpeaker(null);
     }
+  }
+
+  function speak(text: string, language: LanguageCode) {
+    if (!("speechSynthesis" in window)) {
+      setStatus("Bereit fuer die naechste Antwort.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = getSpeechTag(language);
+    utterance.rate = 0.96;
+    utterance.onend = () => setStatus("Bereit fuer die naechste Antwort.");
+    utterance.onerror = () => setStatus("Bereit fuer die naechste Antwort.");
+
+    window.speechSynthesis.speak(utterance);
   }
 
   function exportTranscript() {
@@ -214,7 +248,7 @@ export default function Home() {
 
           <div className="mt-5 flex items-start gap-3 rounded-lg border border-teal-900/10 bg-teal-50/80 p-4 text-sm leading-6 text-teal-950">
             <ShieldCheck className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            <p>Audio wird nur fuer den jeweiligen Turn an die API gesendet. Es gibt kein Dauer-Streaming im MVP.</p>
+            <p>Spracheingabe und Audioausgabe laufen im Browser. An die API wird nur erkannter Text zur Uebersetzung gesendet.</p>
           </div>
         </section>
       </main>

@@ -6,7 +6,7 @@ Mobile-first MVP fuer eine Push-to-talk Simultan-Uebersetzungs-App in Recruiting
 
 - Startscreen mit Auswahl der Kunden- und Kandidatensprache
 - Interview-Screen mit zwei grossen Push-to-talk Buttons
-- OpenAI Speech-to-Text pro Aufnahme
+- Browser Speech-to-Text pro Aufnahme
 - Uebersetzung in die jeweils andere Sprache
 - Text-to-Speech Wiedergabe der Uebersetzung
 - Chat-artiger Gespraechsverlauf mit Original und Uebersetzung
@@ -19,13 +19,14 @@ Mobile-first MVP fuer eine Push-to-talk Simultan-Uebersetzungs-App in Recruiting
 - TypeScript
 - Tailwind CSS
 - Next.js API Route
-- OpenAI API
+- OpenRouter API
 
-## OpenAI Modelle
+## OpenRouter
 
-- Speech-to-Text: `gpt-4o-mini-transcribe`
-- Translation: `gpt-4o-mini`
-- Text-to-Speech: `gpt-4o-mini-tts`
+- Speech-to-Text: Browser Web Speech API
+- Translation: OpenRouter Chat Completions API
+- Text-to-Speech: Browser Speech Synthesis API
+- Default model: `openai/gpt-4o-mini`
 
 ## Setup
 
@@ -37,7 +38,8 @@ cp .env.example .env.local
 Dann in `.env.local` den API-Key setzen:
 
 ```bash
-OPENAI_API_KEY=sk-...
+OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
 ## Entwicklung starten
@@ -64,16 +66,16 @@ npm run start
 ## Deployment auf Vercel
 
 1. Repository mit Vercel verbinden.
-2. Environment Variable `OPENAI_API_KEY` in Vercel setzen.
+2. Environment Variable `OPENROUTER_API_KEY` in Vercel setzen.
 3. Deploy starten.
 
-Die API Route ist serverseitig, der OpenAI-Key wird nicht an den Browser ausgeliefert.
+Die API Route ist serverseitig, der OpenRouter-Key wird nicht an den Browser ausgeliefert.
 
 ## Projektstruktur
 
 ```text
 app/
-  api/interview-turn/route.ts  # STT, Translation, TTS
+  api/interview-turn/route.ts  # OpenRouter Translation
   globals.css                  # Tailwind und globale Styles
   layout.tsx                   # Metadata und PWA Manifest
   page.tsx                     # Mobile Web-App
@@ -84,6 +86,7 @@ components/
 lib/
   languages.ts
   types.ts
+  web-speech.ts
 public/
   icon.svg
   manifest.webmanifest
@@ -92,3 +95,7 @@ public/
 ## Realtime Streaming spaeter
 
 Das MVP trennt jeden Gespraechsbeitrag als einzelnen Turn. Fuer spaeteres Realtime Streaming ist die UI bereits nach Sprecherrollen getrennt; der API-Pfad kann durch eine Realtime-Session Route ergaenzt werden, ohne den Gespraechsverlauf neu zu modellieren.
+
+## Browser-Hinweis
+
+Die OpenRouter-Version nutzt fuer Spracheingabe die Web Speech API. Fuer Kundentests funktionieren Chrome und Edge am zuverlaessigsten. Safari kann je nach Geraet und Sprache eingeschraenkt sein.
