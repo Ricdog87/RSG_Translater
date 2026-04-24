@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "RSG Translate",
-  description: "Push-to-talk Simultan-Uebersetzung fuer Recruiting-Interviews",
+  description: "Push-to-talk Simultan-Übersetzung für Recruiting-Interviews",
   applicationName: "RSG Translate",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -15,7 +15,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#0f766e"
+  themeColor: "#f5f5f7"
 };
 
 export default function RootLayout({

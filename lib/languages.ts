@@ -9,12 +9,12 @@ export type LanguageOption = {
 
 export const languages: LanguageOption[] = [
   { code: "de", label: "Deutsch", nativeName: "Deutsch", speechTag: "de-DE" },
-  { code: "fr", label: "Franzoesisch", nativeName: "Francais", speechTag: "fr-FR" },
+  { code: "fr", label: "Französisch", nativeName: "Français", speechTag: "fr-FR" },
   { code: "ar", label: "Arabisch", nativeName: "العربية", speechTag: "ar-SA" },
   { code: "en", label: "Englisch", nativeName: "English", speechTag: "en-US" },
-  { code: "es", label: "Spanisch", nativeName: "Espanol", speechTag: "es-ES" },
+  { code: "es", label: "Spanisch", nativeName: "Español", speechTag: "es-ES" },
   { code: "it", label: "Italienisch", nativeName: "Italiano", speechTag: "it-IT" },
-  { code: "tr", label: "Tuerkisch", nativeName: "Turkce", speechTag: "tr-TR" }
+  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR" }
 ];
 
 export function getLanguageLabel(code: string) {

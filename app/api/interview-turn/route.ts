@@ -93,17 +93,17 @@ export async function POST(request: Request) {
   const body = await readJsonBody(request);
 
   if (!body) {
-    return jsonError("Ungueltige Anfrage. Bitte erneut versuchen.");
+    return jsonError("Ungültige Anfrage. Bitte erneut versuchen.");
   }
 
   const originalText = body.originalText?.trim();
 
   if (!isSpeaker(body.speaker) || !isLanguageCode(body.languageA) || !isLanguageCode(body.languageB)) {
-    return jsonError("Ungueltige Sprecher- oder Sprachangaben.");
+    return jsonError("Ungültige Sprecher- oder Sprachangaben.");
   }
 
   if (!originalText) {
-    return jsonError("Es wurde kein erkannter Text uebergeben.");
+    return jsonError("Es wurde kein erkannter Text übergeben.");
   }
 
   const sourceLanguage = body.speaker === "customer" ? body.languageA : body.languageB;
@@ -143,13 +143,13 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const providerMessage = data?.error?.message ?? raw.slice(0, 240);
-      return jsonError(providerMessage || "OpenRouter konnte die Uebersetzung nicht erzeugen.", response.status);
+      return jsonError(providerMessage || "OpenRouter konnte die Übersetzung nicht erzeugen.", response.status);
     }
 
     const translatedText = data?.choices?.[0]?.message?.content?.trim();
 
     if (!translatedText) {
-      return jsonError("Die Uebersetzung konnte nicht erzeugt werden.", 502);
+      return jsonError("Die Übersetzung konnte nicht erzeugt werden.", 502);
     }
 
     const payload: TranslateResponse = {

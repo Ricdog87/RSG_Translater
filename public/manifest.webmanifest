@@ -1,11 +1,11 @@
 {
   "name": "RSG Translate",
   "short_name": "RSG Translate",
-  "description": "Push-to-talk Uebersetzer fuer Recruiting-Interviews",
+  "description": "Push-to-talk Übersetzer für Recruiting-Interviews",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f6f7f2",
-  "theme_color": "#0f766e",
+  "background_color": "#f5f5f7",
+  "theme_color": "#f5f5f7",
   "icons": [
     {
       "src": "/icon.svg",

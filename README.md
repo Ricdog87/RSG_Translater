@@ -1,20 +1,20 @@
 # RSG Translate
 
-Mobile-first MVP fuer eine Push-to-talk Simultan-Uebersetzungs-App in Recruiting-Interviews.
+Mobile-first MVP für eine Push-to-talk Simultan-Übersetzungs-App in Recruiting-Interviews.
 
 ## Funktionen
 
 - Startscreen mit Auswahl der Kunden- und Bewerbersprache
 - Interview-Screen mit zwei grossen Push-to-talk Buttons
-- Datenschutzmodus mit expliziter Zustimmung vor Uebersetzung und optionaler Spracheingabe
+- Datenschutzmodus mit expliziter Zustimmung vor Übersetzung und optionaler Spracheingabe
 - Manuelle Texteingabe als datenschutzfreundlicher Standard ohne Browser-Spracherkennung
 - Browser Speech-to-Text pro Aufnahme
-- Uebersetzung in die jeweils andere Sprache
-- Text-to-Speech Wiedergabe der Uebersetzung
-- Laufendes Transkript mit Original und Uebersetzung
+- Übersetzung in die jeweils andere Sprache
+- Text-to-Speech Wiedergabe der Übersetzung
+- Laufendes Transkript mit Original und Übersetzung
 - Meeting-artiges Interview-Transkript mit Zeitstempeln, Sprecherrollen und Interview-Metadaten
-- Nachgang-Export als Transkript-Datei und PDF ueber Browser-Druckdialog
-- PWA-Metadaten fuer Installation auf mobilen Geraeten
+- Nachgang-Export als Transkript-Datei und PDF über Browser-Druckdialog
+- PWA-Metadaten für Installation auf mobilen Geräten
 
 ## Tech Stack
 
@@ -52,13 +52,13 @@ OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
 npm run dev
 ```
 
-Die App laeuft danach unter:
+Die App läuft danach unter:
 
 ```text
 http://localhost:3000
 ```
 
-Wichtig: Mikrofonzugriff funktioniert im Browser nur auf `localhost` oder ueber HTTPS.
+Wichtig: Mikrofonzugriff funktioniert im Browser nur auf `localhost` oder über HTTPS.
 
 ## Build
 
@@ -83,15 +83,15 @@ Die API Route ist serverseitig, der OpenRouter-Key wird nicht an den Browser aus
 - Die Vercel Serverless Function ist auf Frankfurt (`fra1`) ausgerichtet.
 - Es wird kein Audio an den App-Server gesendet.
 - Im Standard-Workflow kann Text manuell eingegeben werden.
-- Push-to-talk ist optional und muss separat bestaetigt werden. Je nach Browser kann die Web Speech API Audio durch den Browser-Anbieter verarbeiten.
-- Zur Uebersetzung wird nur der erkannte oder eingegebene Text an OpenRouter gesendet.
-- OpenRouter wird mit `provider.data_collection = "deny"` eingeschraenkt, sodass nur Provider genutzt werden sollen, die keine Nutzerdaten sammeln.
-- Der OpenRouter EU-Endpunkt kann ueber `OPENROUTER_BASE_URL=https://eu.openrouter.ai/api/v1/chat/completions` aktiviert werden, wenn er fuer den Account freigeschaltet ist.
-- Fuer produktive DSGVO-Nutzung sollten AVV/DPA, Datenschutzhinweise, TOMs, Aufbewahrungsregeln und ein gepruefter EU-STT/LLM-Anbieter verbindlich geklaert werden.
+- Push-to-talk ist optional und muss separat bestätigt werden. Je nach Browser kann die Web Speech API Audio durch den Browser-Anbieter verarbeiten.
+- Zur Übersetzung wird nur der erkannte oder eingegebene Text an OpenRouter gesendet.
+- OpenRouter wird mit `provider.data_collection = "deny"` eingeschränkt, sodass nur Provider genutzt werden sollen, die keine Nutzerdaten sammeln.
+- Der OpenRouter EU-Endpunkt kann über `OPENROUTER_BASE_URL=https://eu.openrouter.ai/api/v1/chat/completions` aktiviert werden, wenn er für den Account freigeschaltet ist.
+- Für produktive DSGVO-Nutzung sollten AVV/DPA, Datenschutzhinweise, TOMs, Aufbewahrungsregeln und ein geprüfter EU-STT/LLM-Anbieter verbindlich geklärt werden.
 
 ## Hostinger / EU-Hosting
 
-Hostinger mit EU-Server kann fuer das App-Hosting helfen. Fuer diese Next.js API Route brauchst du allerdings Node.js/Server-Hosting oder einen VPS. Reines statisches Webhosting reicht nicht fuer die serverseitige OpenRouter-Proxy-Route. Datenschutzrechtlich entscheidend ist ausserdem nicht nur der Serverstandort, sondern auch, welche Unterauftragsverarbeiter Text oder Audio verarbeiten.
+Hostinger mit EU-Server kann für das App-Hosting helfen. Für diese Next.js API Route brauchst du allerdings Node.js/Server-Hosting oder einen VPS. Reines statisches Webhosting reicht nicht für die serverseitige OpenRouter-Proxy-Route. Datenschutzrechtlich entscheidend ist außerdem nicht nur der Serverstandort, sondern auch, welche Unterauftragsverarbeiter Text oder Audio verarbeiten.
 
 ## Projektstruktur
 
@@ -114,10 +114,10 @@ public/
   manifest.webmanifest
 ```
 
-## Realtime Streaming spaeter
+## Realtime Streaming später
 
-Das MVP trennt jeden Gespraechsbeitrag als einzelnen Turn. Fuer spaeteres Realtime Streaming ist die UI bereits nach Sprecherrollen getrennt; der API-Pfad kann durch eine Realtime-Session Route ergaenzt werden, ohne den Gespraechsverlauf neu zu modellieren.
+Das MVP trennt jeden Gesprächsbeitrag als einzelnen Turn. Für späteres Realtime Streaming ist die UI bereits nach Sprecherrollen getrennt; der API-Pfad kann durch eine Realtime-Session Route ergänzt werden, ohne den Gesprächsverlauf neu zu modellieren.
 
 ## Browser-Hinweis
 
-Die OpenRouter-Version nutzt fuer Spracheingabe die Web Speech API. Fuer Kundentests funktionieren Chrome und Edge am zuverlaessigsten. Safari kann je nach Geraet und Sprache eingeschraenkt sein.
+Die OpenRouter-Version nutzt für Spracheingabe die Web Speech API. Für Kundentests funktionieren Chrome und Edge am zuverlässigsten. Safari kann je nach Gerät und Sprache eingeschränkt sein.
