@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import {
+  ChevronDown,
   Download,
   FileText,
   Keyboard,
@@ -46,7 +47,7 @@ export default function Home() {
   const [status, setStatus] = useState("Bereit für das Interview.");
   const [error, setError] = useState<string | null>(null);
   const [translationConsent, setTranslationConsent] = useState(false);
-  const [speechConsent, setSpeechConsent] = useState(false);
+  const [speechConsent, setSpeechConsent] = useState(true);
   const [transcriptView, setTranscriptView] = useState<TranscriptView>("translated");
   const [interviewTitle, setInterviewTitle] = useState("Recruiting Interview");
   const [customerName, setCustomerName] = useState("Kunde");
@@ -133,7 +134,7 @@ export default function Home() {
 
       recognition.start();
       setActiveSpeaker(speaker);
-      setStatus(`${speakerLabel(speaker)} spricht...`);
+      setStatus(`${speakerLabel(speaker)} spricht. Nach dem Loslassen wird sofort übersetzt.`);
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "Mikrofonzugriff ist nicht verfügbar.";
       setError(message);
@@ -194,7 +195,7 @@ export default function Home() {
 
     isSubmittingRef.current = true;
     setProcessingSpeaker(speaker);
-    setStatus("Übersetze mit OpenRouter und spiele Audio ab...");
+    setStatus("Übersetze und spiele die Antwort vor...");
 
     try {
       const response = await fetch("/api/interview-turn", {
@@ -326,47 +327,18 @@ export default function Home() {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-5 sm:max-w-3xl sm:px-5 sm:py-10">
         <section className="flex flex-1 flex-col justify-center">
-          <div className="mb-8">
+          <div className="mb-7">
             <div className="mb-5 flex size-14 items-center justify-center rounded-lg bg-zinc-950 text-white shadow-[0_16px_40px_rgba(24,24,27,0.16)]">
               <Languages className="size-7" aria-hidden="true" />
             </div>
             <p className="mb-3 text-sm font-semibold uppercase text-zinc-500">Recruiting Interpreter</p>
             <h1 className="text-4xl font-semibold leading-none text-zinc-950 sm:text-6xl">RSG Translate</h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-zinc-600 sm:mt-5 sm:text-lg">
-              Push-to-talk Übersetzung für Interviews zwischen Kunden und internationalen Kandidaten.
+              Zwei Sprachen wählen, Taste halten, sprechen. Die App übersetzt und liest die Antwort direkt vor.
             </p>
           </div>
 
           <div className="print-surface rounded-lg border border-white/80 bg-white/80 p-4 shadow-[0_24px_70px_rgba(24,24,27,0.10)] backdrop-blur-xl sm:p-6">
-            <div className="mb-5 grid gap-3">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-zinc-700">Interview-Titel</span>
-                <input
-                  value={interviewTitle}
-                  onChange={(event) => setInterviewTitle(event.target.value)}
-                  className="h-12 w-full rounded-lg border border-zinc-200 bg-white/90 px-4 text-base font-semibold text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
-                />
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-zinc-700">Kunde</span>
-                  <input
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    className="h-12 w-full rounded-lg border border-zinc-200 bg-white/90 px-4 text-base font-semibold text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-zinc-700">Bewerber</span>
-                  <input
-                    value={candidateName}
-                    onChange={(event) => setCandidateName(event.target.value)}
-                    className="h-12 w-full rounded-lg border border-zinc-200 bg-white/90 px-4 text-base font-semibold text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
-                  />
-                </label>
-              </div>
-            </div>
-
             <div className="grid gap-3 sm:gap-4">
               <LanguagePicker id="language-a" label="Sprache Kunde" value={languageA} onChange={setLanguageA} />
               <LanguagePicker id="language-b" label="Sprache Bewerber" value={languageB} onChange={setLanguageB} />
@@ -414,8 +386,8 @@ export default function Home() {
           <div className="mt-5 flex items-start gap-3 rounded-lg border border-blue-200/70 bg-blue-50/70 p-4 text-sm leading-6 text-zinc-700">
             <ShieldCheck className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             <p>
-              Standardmäßig wird kein Audio an den App-Server gesendet und es wird nichts gespeichert. Für DSGVO-Tests am saubersten:
-              manuelle Texteingabe nutzen oder einen geprüften EU-STT-Anbieter anbinden.
+              Es wird kein Audio an den App-Server gesendet und es wird nichts gespeichert. Zur Übersetzung wird nur erkannter oder
+              eingegebener Text übertragen.
             </p>
           </div>
         </section>
@@ -443,11 +415,20 @@ export default function Home() {
         </button>
       </header>
 
+      <section className="no-print mb-3 rounded-lg border border-zinc-200 bg-white/85 p-4 shadow-[0_10px_28px_rgba(24,24,27,0.06)] backdrop-blur-xl">
+        <p className="text-xs font-semibold uppercase text-zinc-400">Live-Modus</p>
+        <h2 className="mt-1 text-xl font-semibold leading-tight text-zinc-950">Taste gedrückt halten und direkt sprechen.</h2>
+        <p className="mt-2 text-sm leading-6 text-zinc-600">
+          Loslassen übersetzt den Beitrag in die andere Sprache und liest ihn automatisch vor.
+        </p>
+      </section>
+
       <section className="no-print grid gap-3 sm:grid-cols-2">
         <PushToTalkButton
           speaker="customer"
-          label="Kunde spricht"
-          hint={`Aufnehmen in ${getLanguageLabel(languageA)}`}
+          label={`${customerName} spricht`}
+          hint={`Hier in ${getLanguageLabel(languageA)} reinsprechen`}
+          languageLine={`${getLanguageLabel(languageA)} → ${getLanguageLabel(languageB)}`}
           active={activeSpeaker === "customer"}
           disabled={Boolean(activeSpeaker || processingSpeaker) || !speechConsent}
           onStart={startRecording}
@@ -455,44 +436,14 @@ export default function Home() {
         />
         <PushToTalkButton
           speaker="candidate"
-          label="Bewerber spricht"
-          hint={`Aufnehmen in ${getLanguageLabel(languageB)}`}
+          label={`${candidateName} spricht`}
+          hint={`Hier in ${getLanguageLabel(languageB)} reinsprechen`}
+          languageLine={`${getLanguageLabel(languageB)} → ${getLanguageLabel(languageA)}`}
           active={activeSpeaker === "candidate"}
           disabled={Boolean(activeSpeaker || processingSpeaker) || !speechConsent}
           onStart={startRecording}
           onStop={stopRecording}
         />
-      </section>
-
-      <section className="no-print mt-4 grid gap-3 sm:grid-cols-2">
-        {(["customer", "candidate"] as Speaker[]).map((speaker) => (
-          <div key={speaker} className="rounded-lg border border-white/80 bg-white/80 p-4 shadow-[0_12px_32px_rgba(24,24,27,0.07)] backdrop-blur-xl">
-            <div className="mb-3 flex items-center gap-2">
-              <Keyboard className="size-5 text-zinc-500" aria-hidden="true" />
-              <p className="text-sm font-semibold text-zinc-950">{speakerLabel(speaker)} Text</p>
-            </div>
-            <textarea
-              value={manualText[speaker]}
-              onChange={(event) =>
-                setManualText((current) => ({
-                  ...current,
-                  [speaker]: event.target.value
-                }))
-              }
-              rows={2}
-              placeholder={`Text in ${getLanguageLabel(speaker === "customer" ? languageA : languageB)} eingeben`}
-              className="w-full resize-none rounded-lg border border-zinc-200 bg-white/90 px-3 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
-            />
-            <button
-              type="button"
-              onClick={() => submitManualTranscript(speaker)}
-              disabled={processingSpeaker !== null || !translationConsent}
-              className="mt-3 h-11 w-full rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-50"
-            >
-              Übersetzen
-            </button>
-          </div>
-        ))}
       </section>
 
       <section className="no-print mt-4 rounded-lg border border-white/80 bg-white/80 p-4 shadow-[0_12px_32px_rgba(24,24,27,0.07)] backdrop-blur-xl">
@@ -505,6 +456,43 @@ export default function Home() {
           Keine Speicherung im Backend. Zur Übersetzung wird nur der angezeigte Text gesendet, kein Audio und kein Verlauf.
         </p>
       </section>
+
+      <details className="no-print mt-4 rounded-lg border border-zinc-200 bg-white/80 p-4 shadow-[0_12px_32px_rgba(24,24,27,0.06)] backdrop-blur-xl">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-zinc-950">
+          <span className="flex items-center gap-2">
+            <Keyboard className="size-5 text-zinc-500" aria-hidden="true" />
+            Texteingabe als Backup
+          </span>
+          <ChevronDown className="size-5 text-zinc-500" aria-hidden="true" />
+        </summary>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {(["customer", "candidate"] as Speaker[]).map((speaker) => (
+            <div key={speaker} className="rounded-lg border border-zinc-200 bg-white p-3">
+              <p className="mb-2 text-sm font-semibold text-zinc-950">{speakerLabel(speaker)} Text</p>
+              <textarea
+                value={manualText[speaker]}
+                onChange={(event) =>
+                  setManualText((current) => ({
+                    ...current,
+                    [speaker]: event.target.value
+                  }))
+                }
+                rows={2}
+                placeholder={`Text in ${getLanguageLabel(speaker === "customer" ? languageA : languageB)} eingeben`}
+                className="w-full resize-none rounded-lg border border-zinc-200 bg-white/90 px-3 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
+              />
+              <button
+                type="button"
+                onClick={() => submitManualTranscript(speaker)}
+                disabled={processingSpeaker !== null || !translationConsent}
+                className="mt-3 h-11 w-full rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-50"
+              >
+                Übersetzen
+              </button>
+            </div>
+          ))}
+        </div>
+      </details>
 
       <section className="print-surface mt-5 rounded-lg border border-white/80 bg-white/80 p-4 shadow-[0_24px_70px_rgba(24,24,27,0.10)] backdrop-blur-xl sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -5,6 +5,7 @@ type PushToTalkButtonProps = {
   speaker: Speaker;
   label: string;
   hint: string;
+  languageLine: string;
   active: boolean;
   disabled: boolean;
   onStart: (speaker: Speaker) => void;
@@ -15,6 +16,7 @@ export function PushToTalkButton({
   speaker,
   label,
   hint,
+  languageLine,
   active,
   disabled,
   onStart,
@@ -25,13 +27,14 @@ export function PushToTalkButton({
       type="button"
       disabled={disabled && !active}
       onPointerDown={(event) => {
+        event.preventDefault();
         event.currentTarget.setPointerCapture(event.pointerId);
         onStart(speaker);
       }}
       onPointerUp={onStop}
       onPointerCancel={onStop}
       className={[
-        "flex min-h-36 w-full touch-none select-none flex-col items-center justify-center gap-3 rounded-lg px-5 text-center shadow-[0_18px_45px_rgba(15,23,42,0.10)] transition duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-55 sm:min-h-44 sm:gap-4",
+        "flex min-h-44 w-full touch-none select-none flex-col items-center justify-center gap-3 rounded-lg px-5 text-center shadow-[0_18px_45px_rgba(15,23,42,0.10)] transition duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-55 sm:min-h-52 sm:gap-4",
         active
           ? "bg-red-500 text-white shadow-red-900/15"
           : speaker === "customer"
@@ -47,9 +50,10 @@ export function PushToTalkButton({
       >
         {active ? <Square className="size-7 sm:size-8" aria-hidden="true" /> : <Mic className="size-7 sm:size-8" aria-hidden="true" />}
       </span>
-      <span className="text-xl font-semibold leading-tight sm:text-2xl">{active ? "Loslassen zum Übersetzen" : label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.12em] opacity-75">{languageLine}</span>
+      <span className="text-2xl font-semibold leading-tight sm:text-3xl">{active ? "Jetzt sprechen" : label}</span>
       <span className={["text-sm font-medium", speaker === "customer" || active ? "text-white/75" : "text-zinc-500"].join(" ")}>
-        {hint}
+        {active ? "Loslassen: übersetzen und vorlesen" : hint}
       </span>
     </button>
   );
