@@ -60,6 +60,7 @@ export default function Home() {
   const transcriptRef = useRef("");
   const speakerRef = useRef<Speaker | null>(null);
   const shouldSubmitRef = useRef(false);
+  const isSubmittingRef = useRef(false);
 
   function startRecording(speaker: Speaker) {
     if (activeSpeaker || processingSpeaker) {
@@ -175,6 +176,10 @@ export default function Home() {
   }
 
   async function submitTranscript(speaker: Speaker, originalText: string) {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     if (!originalText) {
       setStatus("Bereit für das Interview.");
       setError("Es wurde keine Sprache erkannt. Bitte Taste gedrückt halten und erneut sprechen.");
@@ -187,6 +192,7 @@ export default function Home() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setProcessingSpeaker(speaker);
     setStatus("Übersetze mit OpenRouter und spiele Audio ab...");
 
@@ -217,18 +223,19 @@ export default function Home() {
       const result = data as TranslateResponse;
       const createdAt = new Date().toISOString();
 
-      const entry: TranscriptEntry = {
-        id: createId(),
-        createdAt,
-        turnNumber: entries.length + 1,
-        speaker: result.speaker,
-        originalText: result.originalText,
-        translatedText: result.translatedText,
-        sourceLanguage: result.sourceLanguage,
-        targetLanguage: result.targetLanguage
-      };
-
-      setEntries((current) => [entry, ...current]);
+      setEntries((current) => [
+        {
+          id: createId(),
+          createdAt,
+          turnNumber: current.length + 1,
+          speaker: result.speaker,
+          originalText: result.originalText,
+          translatedText: result.translatedText,
+          sourceLanguage: result.sourceLanguage,
+          targetLanguage: result.targetLanguage
+        },
+        ...current
+      ]);
       setStatus("Übersetzung wird abgespielt.");
 
       speak(result.translatedText, result.targetLanguage);
@@ -237,6 +244,7 @@ export default function Home() {
       setError(message);
       setStatus("Bereit für das Interview.");
     } finally {
+      isSubmittingRef.current = false;
       setProcessingSpeaker(null);
     }
   }
@@ -316,15 +324,15 @@ export default function Home() {
 
   if (mode === "setup") {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 py-6 sm:py-10">
+      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-5 sm:max-w-3xl sm:px-5 sm:py-10">
         <section className="flex flex-1 flex-col justify-center">
           <div className="mb-8">
             <div className="mb-5 flex size-14 items-center justify-center rounded-lg bg-zinc-950 text-white shadow-[0_16px_40px_rgba(24,24,27,0.16)]">
               <Languages className="size-7" aria-hidden="true" />
             </div>
             <p className="mb-3 text-sm font-semibold uppercase text-zinc-500">Recruiting Interpreter</p>
-            <h1 className="text-5xl font-semibold leading-none text-zinc-950 sm:text-6xl">RSG Translate</h1>
-            <p className="mt-5 max-w-xl text-lg leading-7 text-zinc-600">
+            <h1 className="text-4xl font-semibold leading-none text-zinc-950 sm:text-6xl">RSG Translate</h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-zinc-600 sm:mt-5 sm:text-lg">
               Push-to-talk Übersetzung für Interviews zwischen Kunden und internationalen Kandidaten.
             </p>
           </div>
@@ -359,7 +367,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-3 sm:gap-4">
               <LanguagePicker id="language-a" label="Sprache Kunde" value={languageA} onChange={setLanguageA} />
               <LanguagePicker id="language-b" label="Sprache Bewerber" value={languageB} onChange={setLanguageB} />
             </div>
@@ -397,7 +405,7 @@ export default function Home() {
               type="button"
               onClick={() => setMode("interview")}
               disabled={!translationConsent}
-              className="mt-6 h-16 w-full rounded-lg bg-zinc-950 px-5 text-lg font-semibold text-white shadow-[0_16px_42px_rgba(24,24,27,0.16)] transition hover:bg-zinc-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 h-14 w-full rounded-lg bg-zinc-950 px-5 text-base font-semibold text-white shadow-[0_16px_42px_rgba(24,24,27,0.16)] transition hover:bg-zinc-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:text-lg"
             >
               Interview starten
             </button>
@@ -416,12 +424,12 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-4 sm:px-6 sm:py-7">
+    <main className="mx-auto min-h-screen w-full max-w-md px-4 py-4 sm:max-w-5xl sm:px-6 sm:py-7">
       <header className="no-print mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase text-zinc-500">RSG Translate</p>
-          <h1 className="text-3xl font-semibold text-zinc-950">Interview</h1>
-          <p className="mt-1 text-sm font-medium text-zinc-600">
+          <h1 className="text-2xl font-semibold text-zinc-950 sm:text-3xl">Interview</h1>
+          <p className="mt-1 text-sm font-medium leading-5 text-zinc-600">
             {interviewTitle} · {customerName}: {getLanguageLabel(languageA)} · {candidateName}: {getLanguageLabel(languageB)}
           </p>
         </div>
@@ -471,7 +479,7 @@ export default function Home() {
                   [speaker]: event.target.value
                 }))
               }
-              rows={3}
+              rows={2}
               placeholder={`Text in ${getLanguageLabel(speaker === "customer" ? languageA : languageB)} eingeben`}
               className="w-full resize-none rounded-lg border border-zinc-200 bg-white/90 px-3 py-3 text-base text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
             />
@@ -499,7 +507,7 @@ export default function Home() {
       </section>
 
       <section className="print-surface mt-5 rounded-lg border border-white/80 bg-white/80 p-4 shadow-[0_24px_70px_rgba(24,24,27,0.10)] backdrop-blur-xl sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-1 flex items-center gap-2">
               <FileText className="size-5 text-zinc-500" aria-hidden="true" />
@@ -509,11 +517,11 @@ export default function Home() {
               {entries.length} Beiträge · {customerName} / {candidateName}
             </p>
           </div>
-          <div className="no-print flex gap-2">
+          <div className="no-print grid grid-cols-2 gap-2 sm:flex">
             <button
               type="button"
               onClick={exportTranscript}
-              className="flex size-11 items-center justify-center rounded-lg border border-zinc-200 bg-white/90 text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40"
+              className="flex h-11 min-w-0 items-center justify-center rounded-lg border border-zinc-200 bg-white/90 text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 sm:size-11"
               aria-label="Verlauf als Text exportieren"
               disabled={entries.length === 0}
             >

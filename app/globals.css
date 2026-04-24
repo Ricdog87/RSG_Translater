@@ -11,6 +11,7 @@
 
 html {
   background: var(--background);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -26,8 +27,14 @@ body {
 }
 
 button,
-select {
+select,
+input,
+textarea {
   font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 @media print {

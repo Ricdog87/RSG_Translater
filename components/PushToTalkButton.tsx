@@ -31,7 +31,7 @@ export function PushToTalkButton({
       onPointerUp={onStop}
       onPointerCancel={onStop}
       className={[
-        "flex min-h-44 w-full touch-none select-none flex-col items-center justify-center gap-4 rounded-lg px-5 text-center shadow-[0_18px_45px_rgba(15,23,42,0.10)] transition duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-55",
+        "flex min-h-36 w-full touch-none select-none flex-col items-center justify-center gap-3 rounded-lg px-5 text-center shadow-[0_18px_45px_rgba(15,23,42,0.10)] transition duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-55 sm:min-h-44 sm:gap-4",
         active
           ? "bg-red-500 text-white shadow-red-900/15"
           : speaker === "customer"
@@ -41,13 +41,13 @@ export function PushToTalkButton({
     >
       <span
         className={[
-          "flex size-16 items-center justify-center rounded-full",
+          "flex size-14 items-center justify-center rounded-full sm:size-16",
           active ? "bg-white/20" : speaker === "customer" ? "bg-white/15" : "bg-zinc-100"
         ].join(" ")}
       >
-        {active ? <Square className="size-8" aria-hidden="true" /> : <Mic className="size-8" aria-hidden="true" />}
+        {active ? <Square className="size-7 sm:size-8" aria-hidden="true" /> : <Mic className="size-7 sm:size-8" aria-hidden="true" />}
       </span>
-      <span className="text-2xl font-semibold leading-tight">{active ? "Loslassen zum Übersetzen" : label}</span>
+      <span className="text-xl font-semibold leading-tight sm:text-2xl">{active ? "Loslassen zum Übersetzen" : label}</span>
       <span className={["text-sm font-medium", speaker === "customer" || active ? "text-white/75" : "text-zinc-500"].join(" ")}>
         {hint}
       </span>
