@@ -1,34 +1,41 @@
-import { UserRound } from "lucide-react";
+import { Clock3, UserRound } from "lucide-react";
 import { getLanguageLabel } from "@/lib/languages";
 import type { TranscriptEntry } from "@/lib/types";
 
 type TranscriptListProps = {
   entries: TranscriptEntry[];
+  showTranslated?: boolean;
 };
 
-export function TranscriptList({ entries }: TranscriptListProps) {
+function speakerName(entry: TranscriptEntry) {
+  return entry.speaker === "customer" ? "Kunde" : "Bewerber";
+}
+
+export function TranscriptList({ entries, showTranslated = true }: TranscriptListProps) {
   if (entries.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-slate-300 bg-white/70 px-5 py-10 text-center text-sm font-medium text-slate-500">
-        Der Gespraechsverlauf erscheint hier nach der ersten Aufnahme.
+        Das Interview-Transkript erscheint hier nach dem ersten Beitrag.
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {entries.map((entry) => {
+    <div className="space-y-0">
+      {entries.map((entry, index) => {
         const isCustomer = entry.speaker === "customer";
 
         return (
           <article
             key={entry.id}
             className={[
-              "rounded-lg border bg-white p-4 shadow-sm",
-              isCustomer ? "border-teal-100" : "border-slate-200"
+              "relative border-l-2 bg-white py-4 pl-4 pr-3",
+              index === 0 ? "rounded-t-lg border-t border-r" : "border-t border-r",
+              index === entries.length - 1 ? "rounded-b-lg border-b" : "",
+              isCustomer ? "border-l-teal-600 border-slate-200" : "border-l-slate-900 border-slate-200"
             ].join(" ")}
           >
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span
                   className={[
@@ -39,29 +46,41 @@ export function TranscriptList({ entries }: TranscriptListProps) {
                   <UserRound className="size-5" aria-hidden="true" />
                 </span>
                 <div>
-                  <p className="text-sm font-bold text-slate-950">{isCustomer ? "Kunde" : "Kandidat"}</p>
+                  <p className="text-sm font-black text-slate-950">
+                    {speakerName(entry)} <span className="font-semibold text-slate-400">#{entry.turnNumber}</span>
+                  </p>
                   <p className="text-xs font-medium text-slate-500">
                     {getLanguageLabel(entry.sourceLanguage)} nach {getLanguageLabel(entry.targetLanguage)}
                   </p>
                 </div>
               </div>
-              <time className="text-xs font-medium text-slate-400">
-                {new Intl.DateTimeFormat("de-DE", {
-                  hour: "2-digit",
-                  minute: "2-digit"
-                }).format(new Date(entry.createdAt))}
-              </time>
+              <div className="flex shrink-0 items-center gap-1 text-xs font-medium text-slate-400">
+                <Clock3 className="size-3.5" aria-hidden="true" />
+                <time>
+                  {new Intl.DateTimeFormat("de-DE", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                  }).format(new Date(entry.createdAt))}
+                </time>
+              </div>
             </div>
 
             <div className="space-y-3">
               <div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">Original</p>
-                <p className="text-base leading-relaxed text-slate-800">{entry.originalText}</p>
+                <p className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-400">
+                  Gesprochen ({getLanguageLabel(entry.sourceLanguage)})
+                </p>
+                <p className="whitespace-pre-wrap text-base leading-relaxed text-slate-850">{entry.originalText}</p>
               </div>
-              <div className="rounded-md bg-slate-50 p-3">
-                <p className="mb-1 text-xs font-bold uppercase tracking-wide text-teal-700">Uebersetzung</p>
-                <p className="text-lg font-semibold leading-relaxed text-slate-950">{entry.translatedText}</p>
-              </div>
+              {showTranslated ? (
+                <div className="rounded-md bg-slate-50 p-3">
+                  <p className="mb-1 text-xs font-bold uppercase tracking-wide text-teal-700">
+                    Uebersetzung ({getLanguageLabel(entry.targetLanguage)})
+                  </p>
+                  <p className="whitespace-pre-wrap text-base font-semibold leading-relaxed text-slate-950">{entry.translatedText}</p>
+                </div>
+              ) : null}
             </div>
           </article>
         );

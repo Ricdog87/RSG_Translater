@@ -1,7 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Download, Keyboard, Languages, LoaderCircle, LockKeyhole, RotateCcw, ShieldCheck } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Keyboard,
+  Languages,
+  LoaderCircle,
+  LockKeyhole,
+  RotateCcw,
+  ShieldCheck
+} from "lucide-react";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { PushToTalkButton } from "@/components/PushToTalkButton";
 import { TranscriptList } from "@/components/TranscriptList";
@@ -10,13 +19,21 @@ import type { Speaker, TranslateResponse, TranscriptEntry } from "@/lib/types";
 import { getSpeechRecognitionConstructor, type SpeechRecognitionLike } from "@/lib/web-speech";
 
 type AppMode = "setup" | "interview";
+type TranscriptView = "translated" | "original";
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function speakerLabel(speaker: Speaker) {
-  return speaker === "customer" ? "Kunde" : "Kandidat";
+  return speaker === "customer" ? "Kunde" : "Bewerber";
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
 }
 
 export default function Home() {
@@ -30,6 +47,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [translationConsent, setTranslationConsent] = useState(false);
   const [speechConsent, setSpeechConsent] = useState(false);
+  const [transcriptView, setTranscriptView] = useState<TranscriptView>("translated");
+  const [interviewTitle, setInterviewTitle] = useState("Recruiting Interview");
+  const [customerName, setCustomerName] = useState("Kunde");
+  const [candidateName, setCandidateName] = useState("Bewerber");
   const [manualText, setManualText] = useState<Record<Speaker, string>>({
     customer: "",
     candidate: ""
@@ -194,10 +215,12 @@ export default function Home() {
       }
 
       const result = data as TranslateResponse;
+      const createdAt = new Date().toISOString();
 
       const entry: TranscriptEntry = {
         id: createId(),
-        createdAt: new Date().toISOString(),
+        createdAt,
+        turnNumber: entries.length + 1,
         speaker: result.speaker,
         originalText: result.originalText,
         translatedText: result.translatedText,
@@ -251,25 +274,42 @@ export default function Home() {
   }
 
   function exportTranscript() {
+    const orderedEntries = entries.slice().reverse();
+    const startedAt = orderedEntries[0]?.createdAt;
+    const endedAt = orderedEntries.at(-1)?.createdAt;
+    const customerTurns = orderedEntries.filter((entry) => entry.speaker === "customer").length;
+    const candidateTurns = orderedEntries.filter((entry) => entry.speaker === "candidate").length;
+
+    const header = [
+      "RSG Translate - Interview-Transkript",
+      `Titel: ${interviewTitle}`,
+      `Kunde: ${customerName} (${getLanguageLabel(languageA)})`,
+      `Bewerber: ${candidateName} (${getLanguageLabel(languageB)})`,
+      startedAt ? `Beginn: ${formatDateTime(startedAt)}` : "Beginn: -",
+      endedAt ? `Letzter Beitrag: ${formatDateTime(endedAt)}` : "Letzter Beitrag: -",
+      `Beitraege: ${orderedEntries.length} gesamt, ${customerTurns} Kunde, ${candidateTurns} Bewerber`,
+      "Hinweis: Dieses Transkript wird lokal im Browser erzeugt. Das Backend speichert keinen Verlauf."
+    ].join("\n");
+
     const lines = entries
       .slice()
       .reverse()
       .map((entry) => {
         return [
-          `[${new Date(entry.createdAt).toLocaleString("de-DE")}] ${speakerLabel(entry.speaker)}`,
-          `Original (${getLanguageLabel(entry.sourceLanguage)}): ${entry.originalText}`,
+          `[${formatDateTime(entry.createdAt)}] ${speakerLabel(entry.speaker)} #${entry.turnNumber}`,
+          `Gesprochen (${getLanguageLabel(entry.sourceLanguage)}): ${entry.originalText}`,
           `Uebersetzung (${getLanguageLabel(entry.targetLanguage)}): ${entry.translatedText}`
         ].join("\n");
       })
       .join("\n\n");
 
-    const blob = new Blob([lines || "Noch kein Gespraechsverlauf vorhanden."], {
+    const blob = new Blob([`${header}\n\n${lines || "Noch kein Interview-Transkript vorhanden."}`], {
       type: "text/plain;charset=utf-8"
     });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "rsg-translate-interview.txt";
+    anchor.download = "rsg-translate-transkript.txt";
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -290,9 +330,38 @@ export default function Home() {
           </div>
 
           <div className="print-surface rounded-lg border border-white/70 bg-white/82 p-4 shadow-xl shadow-slate-900/8 backdrop-blur sm:p-6">
+            <div className="mb-5 grid gap-3">
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-slate-700">Interview-Titel</span>
+                <input
+                  value={interviewTitle}
+                  onChange={(event) => setInterviewTitle(event.target.value)}
+                  className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base font-semibold text-slate-950 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15"
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">Kunde</span>
+                  <input
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base font-semibold text-slate-950 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">Bewerber</span>
+                  <input
+                    value={candidateName}
+                    onChange={(event) => setCandidateName(event.target.value)}
+                    className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base font-semibold text-slate-950 outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/15"
+                  />
+                </label>
+              </div>
+            </div>
+
             <div className="grid gap-4">
               <LanguagePicker id="language-a" label="Sprache Kunde" value={languageA} onChange={setLanguageA} />
-              <LanguagePicker id="language-b" label="Sprache Kandidat" value={languageB} onChange={setLanguageB} />
+              <LanguagePicker id="language-b" label="Sprache Bewerber" value={languageB} onChange={setLanguageB} />
             </div>
 
             <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -353,7 +422,7 @@ export default function Home() {
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-teal-800">RSG Translate</p>
           <h1 className="text-2xl font-black text-slate-950">Interview</h1>
           <p className="mt-1 text-sm font-medium text-slate-600">
-            Kunde: {getLanguageLabel(languageA)} · Kandidat: {getLanguageLabel(languageB)}
+            {interviewTitle} · {customerName}: {getLanguageLabel(languageA)} · {candidateName}: {getLanguageLabel(languageB)}
           </p>
         </div>
         <button
@@ -378,7 +447,7 @@ export default function Home() {
         />
         <PushToTalkButton
           speaker="candidate"
-          label="Kandidat spricht"
+          label="Bewerber spricht"
           hint={`Aufnehmen in ${getLanguageLabel(languageB)}`}
           active={activeSpeaker === "candidate"}
           disabled={Boolean(activeSpeaker || processingSpeaker) || !speechConsent}
@@ -432,8 +501,10 @@ export default function Home() {
       <section className="print-surface mt-5 rounded-lg border border-white/80 bg-white/72 p-4 shadow-xl shadow-slate-900/8 backdrop-blur sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-black text-slate-950">Gespraechsverlauf</h2>
-            <p className="text-sm font-medium text-slate-500">{entries.length} Eintraege</p>
+            <h2 className="text-xl font-black text-slate-950">Interview-Transkript</h2>
+            <p className="text-sm font-medium text-slate-500">
+              {entries.length} Beitraege · {customerName} / {candidateName}
+            </p>
           </div>
           <div className="no-print flex gap-2">
             <button
@@ -455,7 +526,53 @@ export default function Home() {
             </button>
           </div>
         </div>
-        <TranscriptList entries={entries} />
+        <div className="mb-4 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Titel</p>
+            <p className="mt-1 text-sm font-bold text-slate-950">{interviewTitle}</p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Kunde</p>
+            <p className="mt-1 text-sm font-bold text-slate-950">
+              {customerName} · {getLanguageLabel(languageA)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Bewerber</p>
+            <p className="mt-1 text-sm font-bold text-slate-950">
+              {candidateName} · {getLanguageLabel(languageB)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Status</p>
+            <p className="mt-1 text-sm font-bold text-slate-950">{entries.length ? "Transkript aktiv" : "Noch leer"}</p>
+          </div>
+        </div>
+
+        <div className="no-print mb-4 flex rounded-lg border border-slate-200 bg-white p-1">
+          <button
+            type="button"
+            onClick={() => setTranscriptView("translated")}
+            className={[
+              "flex-1 rounded-md px-3 py-2 text-sm font-bold transition",
+              transcriptView === "translated" ? "bg-teal-700 text-white" : "text-slate-600"
+            ].join(" ")}
+          >
+            Mit Uebersetzung
+          </button>
+          <button
+            type="button"
+            onClick={() => setTranscriptView("original")}
+            className={[
+              "flex-1 rounded-md px-3 py-2 text-sm font-bold transition",
+              transcriptView === "original" ? "bg-teal-700 text-white" : "text-slate-600"
+            ].join(" ")}
+          >
+            Nur Gesprochenes
+          </button>
+        </div>
+
+        <TranscriptList entries={entries.slice().reverse()} showTranslated={transcriptView === "translated"} />
       </section>
     </main>
   );

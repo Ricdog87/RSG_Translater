@@ -10,8 +10,9 @@ export type TranscriptEntry = {
   sourceLanguage: LanguageCode;
   targetLanguage: LanguageCode;
   createdAt: string;
+  turnNumber: number;
 };
 
-export type TranslateResponse = Omit<TranscriptEntry, "id" | "createdAt"> & {
+export type TranslateResponse = Omit<TranscriptEntry, "id" | "createdAt" | "turnNumber"> & {
   provider: "openrouter";
 };

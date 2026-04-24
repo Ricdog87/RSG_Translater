@@ -4,15 +4,16 @@ Mobile-first MVP fuer eine Push-to-talk Simultan-Uebersetzungs-App in Recruiting
 
 ## Funktionen
 
-- Startscreen mit Auswahl der Kunden- und Kandidatensprache
+- Startscreen mit Auswahl der Kunden- und Bewerbersprache
 - Interview-Screen mit zwei grossen Push-to-talk Buttons
 - Datenschutzmodus mit expliziter Zustimmung vor Uebersetzung und optionaler Spracheingabe
 - Manuelle Texteingabe als datenschutzfreundlicher Standard ohne Browser-Spracherkennung
 - Browser Speech-to-Text pro Aufnahme
 - Uebersetzung in die jeweils andere Sprache
 - Text-to-Speech Wiedergabe der Uebersetzung
-- Chat-artiger Gespraechsverlauf mit Original und Uebersetzung
-- Export als Textdatei und PDF-Vorbereitung ueber Browser-Druckdialog
+- Laufendes Transkript mit Original und Uebersetzung
+- Meeting-artiges Interview-Transkript mit Zeitstempeln, Sprecherrollen und Interview-Metadaten
+- Nachgang-Export als Transkript-Datei und PDF ueber Browser-Druckdialog
 - PWA-Metadaten fuer Installation auf mobilen Geraeten
 
 ## Tech Stack
@@ -77,6 +78,7 @@ Die API Route ist serverseitig, der OpenRouter-Key wird nicht an den Browser aus
 ## Datenschutz-MVP
 
 - Das Backend speichert keine Interviewdaten.
+- Das Transkript liegt nur im Browser-State und wird erst beim lokalen Export als Datei erzeugt.
 - API-Antworten werden mit `Cache-Control: no-store` ausgeliefert.
 - Die Vercel Serverless Function ist auf Frankfurt (`fra1`) ausgerichtet.
 - Es wird kein Audio an den App-Server gesendet.
