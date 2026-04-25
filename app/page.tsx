@@ -171,9 +171,14 @@ export default function Home() {
         error: null
       };
     } catch {
+      const normalized = raw.trim().toLowerCase();
+      const isHtmlError = normalized.startsWith("<!doctype html") || normalized.startsWith("<html");
+
       return {
         data: null,
-        error: raw.slice(0, 240) || "Serverantwort konnte nicht gelesen werden."
+        error: isHtmlError
+          ? "Server lieferte HTML statt API-JSON (häufig durch Auth/Login-Schutz). Bitte Deployment/OPENROUTER_BASE_URL prüfen."
+          : raw.slice(0, 240) || "Serverantwort konnte nicht gelesen werden."
       };
     }
   }
