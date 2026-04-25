@@ -103,8 +103,14 @@ async function readOpenRouterResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.OPENROUTER_API_KEY) {
-    return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
+  const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY;
+
+  if (!openRouterApiKey) {
+    return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert. Ein OpenAI sk-proj Key funktioniert hier nicht.", 500);
+  }
+
+  if (!openRouterApiKey.startsWith("sk-or-")) {
+    return jsonError("Ungültiger API-Key für OpenRouter. Bitte einen OpenRouter-Key (Prefix sk-or-) verwenden.", 500);
   }
 
   const body = await readJsonBody(request);
@@ -131,7 +137,7 @@ export async function POST(request: Request) {
     const response = await fetch(openRouterUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${openRouterApiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://rsg-translater.vercel.app",
         "X-Title": "RSG Translate"
