@@ -46,6 +46,9 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
 ```
 
+Wichtig: Für diese App wird ein **OpenRouter-Key** benötigt (`sk-or-...`).  
+Ein OpenAI-Projekt-Key (`sk-proj-...`) funktioniert an diesem Endpoint nicht.
+
 ## Entwicklung starten
 
 ```bash

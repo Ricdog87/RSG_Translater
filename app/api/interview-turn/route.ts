@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLanguageLabel, languages, type LanguageCode } from "@/lib/languages";
+import { getLanguageLabel, getTranslationLanguageName, languages, type LanguageCode } from "@/lib/languages";
 import type { Speaker, TranslateResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -25,6 +25,23 @@ type OpenRouterResponse = {
     message?: string;
   };
 };
+
+function looksLikeHtmlDocument(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return normalized.startsWith("<!doctype html") || normalized.startsWith("<html");
+}
+
+function sanitizeProviderError(raw: string, fallbackMessage: string) {
+  if (!raw.trim()) {
+    return fallbackMessage;
+  }
+
+  if (looksLikeHtmlDocument(raw)) {
+    return "Der konfigurierte Übersetzungs-Endpunkt liefert HTML statt JSON (z. B. Login/Auth-Seite). Bitte OPENROUTER_BASE_URL prüfen.";
+  }
+
+  return raw.slice(0, 240);
+}
 
 function isLanguageCode(value: unknown): value is LanguageCode {
   return typeof value === "string" && validLanguageCodes.has(value as LanguageCode);
@@ -86,8 +103,14 @@ async function readOpenRouterResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.OPENROUTER_API_KEY) {
-    return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
+  const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY;
+
+  if (!openRouterApiKey) {
+    return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert. Ein OpenAI sk-proj Key funktioniert hier nicht.", 500);
+  }
+
+  if (!openRouterApiKey.startsWith("sk-or-")) {
+    return jsonError("Ungültiger API-Key für OpenRouter. Bitte einen OpenRouter-Key (Prefix sk-or-) verwenden.", 500);
   }
 
   const body = await readJsonBody(request);
@@ -114,7 +137,7 @@ export async function POST(request: Request) {
     const response = await fetch(openRouterUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${openRouterApiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://rsg-translater.vercel.app",
         "X-Title": "RSG Translate"
@@ -133,7 +156,7 @@ export async function POST(request: Request) {
           },
           {
             role: "user",
-            content: `Translate from ${getLanguageLabel(sourceLanguage)} to ${getLanguageLabel(targetLanguage)}:\n\n${originalText}`
+            content: `Translate from ${getTranslationLanguageName(sourceLanguage)} (${getLanguageLabel(sourceLanguage)}) to ${getTranslationLanguageName(targetLanguage)} (${getLanguageLabel(targetLanguage)}). Return only translated text in ${getTranslationLanguageName(targetLanguage)}.\n\n${originalText}`
           }
         ]
       })
@@ -142,7 +165,7 @@ export async function POST(request: Request) {
     const { data, raw } = await readOpenRouterResponse(response);
 
     if (!response.ok) {
-      const providerMessage = data?.error?.message ?? raw.slice(0, 240);
+      const providerMessage = data?.error?.message ?? sanitizeProviderError(raw, "OpenRouter konnte die Übersetzung nicht erzeugen.");
       return jsonError(providerMessage || "OpenRouter konnte die Übersetzung nicht erzeugen.", response.status);
     }
 
