@@ -55,6 +55,8 @@ OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
 Priorität: Wenn `OPENAI_API_KEY` gesetzt ist, wird OpenAI verwendet.  
 Wenn `OPENAI_API_KEY` fehlt und `OPENROUTER_API_KEY` gesetzt ist, nutzt die App OpenRouter.
 
+Kompatibilitäts-Aliasse werden ebenfalls gelesen: `OPEN_AI_API_KEY`, `OPEN_ROUTER_API_KEY`, `OPENAI_KEY`, `OPENROUTER_KEY`.
+
 ## Entwicklung starten
 
 ```bash

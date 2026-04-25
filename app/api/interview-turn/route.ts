@@ -33,6 +33,18 @@ type ProviderConfig = {
   model: string;
 };
 
+function firstConfiguredEnv(keys: string[]) {
+  for (const key of keys) {
+    const value = process.env[key]?.trim();
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function looksLikeHtmlDocument(value: string) {
   const normalized = value.trim().toLowerCase();
   return normalized.startsWith("<!doctype html") || normalized.startsWith("<html");
@@ -110,24 +122,35 @@ async function readProviderResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
-  const provider: ProviderConfig | null = process.env.OPENAI_API_KEY
+  const openAIApiKey = firstConfiguredEnv(["OPENAI_API_KEY", "OPEN_AI_API_KEY", "OPENAI_KEY", "OPENAI_PAY_KEY"]);
+  const openRouterApiKey = firstConfiguredEnv([
+    "OPENROUTER_API_KEY",
+    "OPEN_ROUTER_API_KEY",
+    "OPENROUTER_KEY",
+    "OPENROUTER_PAY_KEY"
+  ]);
+
+  const provider: ProviderConfig | null = openAIApiKey
     ? {
         name: "openai",
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: openAIApiKey,
         url: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/chat/completions",
         model: process.env.OPENAI_MODEL ?? "gpt-4o-mini"
       }
-    : process.env.OPENROUTER_API_KEY
+    : openRouterApiKey
       ? {
           name: "openrouter",
-          apiKey: process.env.OPENROUTER_API_KEY,
+          apiKey: openRouterApiKey,
           url: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions",
           model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini"
         }
       : null;
 
   if (!provider) {
-    return jsonError("OPENAI_API_KEY oder OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
+    return jsonError(
+      "Kein API-Key gefunden. Setze OPENAI_API_KEY oder OPENROUTER_API_KEY (auch unterstützt: OPEN_AI_API_KEY, OPEN_ROUTER_API_KEY).",
+      500
+    );
   }
 
   const body = await readJsonBody(request);
