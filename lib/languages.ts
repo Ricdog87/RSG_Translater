@@ -5,17 +5,18 @@ export type LanguageOption = {
   label: string;
   nativeName: string;
   speechTag: string;
+  translationName: string;
 };
 
 export const languages: LanguageOption[] = [
-  { code: "de", label: "Deutsch", nativeName: "Deutsch", speechTag: "de-DE" },
-  { code: "fr", label: "Französisch", nativeName: "Français", speechTag: "fr-FR" },
-  { code: "ar", label: "Arabisch", nativeName: "العربية", speechTag: "ar-SA" },
-  { code: "en", label: "Englisch", nativeName: "English", speechTag: "en-US" },
-  { code: "es", label: "Spanisch", nativeName: "Español", speechTag: "es-ES" },
-  { code: "it", label: "Italienisch", nativeName: "Italiano", speechTag: "it-IT" },
-  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR" },
-  { code: "sr", label: "Serbisch", nativeName: "Srpski", speechTag: "sr-RS" }
+  { code: "de", label: "Deutsch", nativeName: "Deutsch", speechTag: "de-DE", translationName: "German" },
+  { code: "fr", label: "Französisch", nativeName: "Français", speechTag: "fr-FR", translationName: "French" },
+  { code: "ar", label: "Arabisch", nativeName: "العربية", speechTag: "ar-SA", translationName: "Arabic" },
+  { code: "en", label: "Englisch", nativeName: "English", speechTag: "en-US", translationName: "English" },
+  { code: "es", label: "Spanisch", nativeName: "Español", speechTag: "es-ES", translationName: "Spanish" },
+  { code: "it", label: "Italienisch", nativeName: "Italiano", speechTag: "it-IT", translationName: "Italian" },
+  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR", translationName: "Turkish" },
+  { code: "sr", label: "Serbisch", nativeName: "Srpski", speechTag: "sr", translationName: "Serbian" }
 ];
 
 export function getLanguageLabel(code: string) {
@@ -24,4 +25,8 @@ export function getLanguageLabel(code: string) {
 
 export function getSpeechTag(code: string) {
   return languages.find((language) => language.code === code)?.speechTag ?? code;
+}
+
+export function getTranslationLanguageName(code: string) {
+  return languages.find((language) => language.code === code)?.translationName ?? code;
 }
