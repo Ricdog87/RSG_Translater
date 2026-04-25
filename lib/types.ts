@@ -14,5 +14,5 @@ export type TranscriptEntry = {
 };
 
 export type TranslateResponse = Omit<TranscriptEntry, "id" | "createdAt" | "turnNumber"> & {
-  provider: "openrouter";
+  provider: "openai";
 };

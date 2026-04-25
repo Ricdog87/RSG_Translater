@@ -15,7 +15,7 @@ type TranslateRequest = {
   languageB?: LanguageCode;
 };
 
-type OpenRouterResponse = {
+type OpenAIResponse = {
   choices?: Array<{
     message?: {
       content?: string;
@@ -37,7 +37,7 @@ function sanitizeProviderError(raw: string, fallbackMessage: string) {
   }
 
   if (looksLikeHtmlDocument(raw)) {
-    return "Der konfigurierte Übersetzungs-Endpunkt liefert HTML statt JSON (z. B. Login/Auth-Seite). Bitte OPENROUTER_BASE_URL prüfen.";
+    return "Der konfigurierte Übersetzungs-Endpunkt liefert HTML statt JSON (z. B. Login/Auth-Seite). Bitte OPENAI_BASE_URL prüfen.";
   }
 
   return raw.slice(0, 240);
@@ -79,7 +79,7 @@ async function readJsonBody(request: Request) {
   }
 }
 
-async function readOpenRouterResponse(response: Response) {
+async function readProviderResponse(response: Response) {
   const raw = await response.text();
 
   if (!raw.trim()) {
@@ -91,7 +91,7 @@ async function readOpenRouterResponse(response: Response) {
 
   try {
     return {
-      data: JSON.parse(raw) as OpenRouterResponse,
+      data: JSON.parse(raw) as OpenAIResponse,
       raw
     };
   } catch {
@@ -103,14 +103,10 @@ async function readOpenRouterResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
-  const openRouterApiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY;
+  const openAIApiKey = process.env.OPENAI_API_KEY;
 
-  if (!openRouterApiKey) {
-    return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert. Ein OpenAI sk-proj Key funktioniert hier nicht.", 500);
-  }
-
-  if (!openRouterApiKey.startsWith("sk-or-")) {
-    return jsonError("Ungültiger API-Key für OpenRouter. Bitte einen OpenRouter-Key (Prefix sk-or-) verwenden.", 500);
+  if (!openAIApiKey) {
+    return jsonError("OPENAI_API_KEY ist nicht konfiguriert.", 500);
   }
 
   const body = await readJsonBody(request);
@@ -133,21 +129,16 @@ export async function POST(request: Request) {
   const targetLanguage = body.speaker === "customer" ? body.languageB : body.languageA;
 
   try {
-    const openRouterUrl = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions";
-    const response = await fetch(openRouterUrl, {
+    const openAIUrl = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/chat/completions";
+    const response = await fetch(openAIUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openRouterApiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://rsg-translater.vercel.app",
-        "X-Title": "RSG Translate"
+        Authorization: `Bearer ${openAIApiKey}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini",
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
         temperature: 0.2,
-        provider: {
-          data_collection: "deny"
-        },
         messages: [
           {
             role: "system",
@@ -162,11 +153,11 @@ export async function POST(request: Request) {
       })
     });
 
-    const { data, raw } = await readOpenRouterResponse(response);
+    const { data, raw } = await readProviderResponse(response);
 
     if (!response.ok) {
-      const providerMessage = data?.error?.message ?? sanitizeProviderError(raw, "OpenRouter konnte die Übersetzung nicht erzeugen.");
-      return jsonError(providerMessage || "OpenRouter konnte die Übersetzung nicht erzeugen.", response.status);
+      const providerMessage = data?.error?.message ?? sanitizeProviderError(raw, "OpenAI konnte die Übersetzung nicht erzeugen.");
+      return jsonError(providerMessage || "OpenAI konnte die Übersetzung nicht erzeugen.", response.status);
     }
 
     const translatedText = data?.choices?.[0]?.message?.content?.trim();
@@ -181,7 +172,7 @@ export async function POST(request: Request) {
       translatedText,
       sourceLanguage,
       targetLanguage,
-      provider: "openrouter"
+      provider: "openai"
     };
 
     return jsonSuccess(payload);

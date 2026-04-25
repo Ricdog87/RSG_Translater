@@ -22,14 +22,14 @@ Mobile-first MVP für eine Push-to-talk Simultan-Übersetzungs-App in Recruiting
 - TypeScript
 - Tailwind CSS
 - Next.js API Route
-- OpenRouter API
+- OpenAI API
 
-## OpenRouter
+## OpenAI
 
 - Speech-to-Text: Browser Web Speech API
-- Translation: OpenRouter Chat Completions API
+- Translation: OpenAI Chat Completions API
 - Text-to-Speech: Browser Speech Synthesis API
-- Default model: `openai/gpt-4o-mini`
+- Default model: `gpt-4o-mini`
 
 ## Setup
 
@@ -41,13 +41,10 @@ cp .env.example .env.local
 Dann in `.env.local` den API-Key setzen:
 
 ```bash
-OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=openai/gpt-4o-mini
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
+OPENAI_API_KEY=sk-proj-...
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_BASE_URL=https://api.openai.com/v1/chat/completions
 ```
-
-Wichtig: Für diese App wird ein **OpenRouter-Key** benötigt (`sk-or-...`).  
-Ein OpenAI-Projekt-Key (`sk-proj-...`) funktioniert an diesem Endpoint nicht.
 
 ## Entwicklung starten
 
@@ -73,10 +70,10 @@ npm run start
 ## Deployment auf Vercel
 
 1. Repository mit Vercel verbinden.
-2. Environment Variable `OPENROUTER_API_KEY` in Vercel setzen.
+2. Environment Variable `OPENAI_API_KEY` in Vercel setzen.
 3. Deploy starten.
 
-Die API Route ist serverseitig, der OpenRouter-Key wird nicht an den Browser ausgeliefert.
+Die API Route ist serverseitig, der OpenAI-Key wird nicht an den Browser ausgeliefert.
 
 ## Datenschutz-MVP
 
@@ -87,20 +84,18 @@ Die API Route ist serverseitig, der OpenRouter-Key wird nicht an den Browser aus
 - Es wird kein Audio an den App-Server gesendet.
 - Im Standard-Workflow kann Text manuell eingegeben werden.
 - Push-to-talk ist optional und muss separat bestätigt werden. Je nach Browser kann die Web Speech API Audio durch den Browser-Anbieter verarbeiten.
-- Zur Übersetzung wird nur der erkannte oder eingegebene Text an OpenRouter gesendet.
-- OpenRouter wird mit `provider.data_collection = "deny"` eingeschränkt, sodass nur Provider genutzt werden sollen, die keine Nutzerdaten sammeln.
-- Der OpenRouter EU-Endpunkt kann über `OPENROUTER_BASE_URL=https://eu.openrouter.ai/api/v1/chat/completions` aktiviert werden, wenn er für den Account freigeschaltet ist.
+- Zur Übersetzung wird nur der erkannte oder eingegebene Text an OpenAI gesendet.
 - Für produktive DSGVO-Nutzung sollten AVV/DPA, Datenschutzhinweise, TOMs, Aufbewahrungsregeln und ein geprüfter EU-STT/LLM-Anbieter verbindlich geklärt werden.
 
 ## Hostinger / EU-Hosting
 
-Hostinger mit EU-Server kann für das App-Hosting helfen. Für diese Next.js API Route brauchst du allerdings Node.js/Server-Hosting oder einen VPS. Reines statisches Webhosting reicht nicht für die serverseitige OpenRouter-Proxy-Route. Datenschutzrechtlich entscheidend ist außerdem nicht nur der Serverstandort, sondern auch, welche Unterauftragsverarbeiter Text oder Audio verarbeiten.
+Hostinger mit EU-Server kann für das App-Hosting helfen. Für diese Next.js API Route brauchst du allerdings Node.js/Server-Hosting oder einen VPS. Reines statisches Webhosting reicht nicht für die serverseitige API-Proxy-Route. Datenschutzrechtlich entscheidend ist außerdem nicht nur der Serverstandort, sondern auch, welche Unterauftragsverarbeiter Text oder Audio verarbeiten.
 
 ## Projektstruktur
 
 ```text
 app/
-  api/interview-turn/route.ts  # OpenRouter Translation
+  api/interview-turn/route.ts  # OpenAI Translation
   globals.css                  # Tailwind und globale Styles
   layout.tsx                   # Metadata und PWA Manifest
   page.tsx                     # Mobile Web-App
@@ -123,4 +118,4 @@ Das MVP trennt jeden Gesprächsbeitrag als einzelnen Turn. Für späteres Realti
 
 ## Browser-Hinweis
 
-Die OpenRouter-Version nutzt für Spracheingabe die Web Speech API. Für Kundentests funktionieren Chrome und Edge am zuverlässigsten. Safari kann je nach Gerät und Sprache eingeschränkt sein.
+Die OpenAI-Version nutzt für Spracheingabe die Web Speech API. Für Kundentests funktionieren Chrome und Edge am zuverlässigsten. Safari kann je nach Gerät und Sprache eingeschränkt sein.
