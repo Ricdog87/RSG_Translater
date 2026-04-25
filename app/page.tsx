@@ -58,6 +58,8 @@ export default function Home() {
   });
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const speechQueueRef = useRef<SpeechSynthesisUtterance[]>([]);
+  const speechActiveRef = useRef(false);
   const transcriptRef = useRef("");
   const speakerRef = useRef<Speaker | null>(null);
   const shouldSubmitRef = useRef(false);
@@ -265,21 +267,61 @@ export default function Home() {
     void submitTranscript(speaker, text);
   }
 
+  function resolveSpeechVoice(language: LanguageCode) {
+    if (!("speechSynthesis" in window)) {
+      return null;
+    }
+
+    const preferredTag = getSpeechTag(language).toLowerCase();
+    const normalized = preferredTag.split("-")[0];
+    const voices = window.speechSynthesis.getVoices();
+
+    return (
+      voices.find((voice) => voice.lang.toLowerCase() === preferredTag) ??
+      voices.find((voice) => voice.lang.toLowerCase().startsWith(`${normalized}-`)) ??
+      voices.find((voice) => voice.lang.toLowerCase() === normalized) ??
+      null
+    );
+  }
+
+  function flushSpeechQueue() {
+    if (!("speechSynthesis" in window) || speechActiveRef.current) {
+      return;
+    }
+
+    const next = speechQueueRef.current.shift();
+
+    if (!next) {
+      setStatus("Bereit für die nächste Antwort.");
+      return;
+    }
+
+    speechActiveRef.current = true;
+    next.onend = () => {
+      speechActiveRef.current = false;
+      flushSpeechQueue();
+    };
+    next.onerror = () => {
+      speechActiveRef.current = false;
+      flushSpeechQueue();
+    };
+    window.speechSynthesis.speak(next);
+  }
+
   function speak(text: string, language: LanguageCode) {
     if (!("speechSynthesis" in window)) {
       setStatus("Bereit für die nächste Antwort.");
       return;
     }
 
-    window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = getSpeechTag(language);
+    utterance.voice = resolveSpeechVoice(language);
     utterance.rate = 0.96;
-    utterance.onend = () => setStatus("Bereit für die nächste Antwort.");
-    utterance.onerror = () => setStatus("Bereit für die nächste Antwort.");
+    speechQueueRef.current.push(utterance);
 
-    window.speechSynthesis.speak(utterance);
+    setStatus("Übersetzung wird vorgelesen...");
+    flushSpeechQueue();
   }
 
   function exportTranscript() {
@@ -407,7 +449,15 @@ export default function Home() {
         </div>
         <button
           type="button"
-          onClick={() => setMode("setup")}
+          onClick={() => {
+            setMode("setup");
+            if ("speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+            }
+            speechQueueRef.current = [];
+            speechActiveRef.current = false;
+            setStatus("Bereit für das Interview.");
+          }}
           className="flex size-11 items-center justify-center rounded-lg border border-zinc-200 bg-white/90 text-zinc-700 shadow-[0_8px_24px_rgba(24,24,27,0.08)] backdrop-blur"
           aria-label="Sprachen ändern"
         >
@@ -419,7 +469,8 @@ export default function Home() {
         <p className="text-xs font-semibold uppercase text-zinc-400">Live-Modus</p>
         <h2 className="mt-1 text-xl font-semibold leading-tight text-zinc-950">Taste gedrückt halten und direkt sprechen.</h2>
         <p className="mt-2 text-sm leading-6 text-zinc-600">
-          Loslassen übersetzt den Beitrag in die andere Sprache und liest ihn automatisch vor.
+          Loslassen übersetzt den Beitrag in die andere Sprache und liest ihn automatisch vor. Neue Antworten werden direkt in
+          einer Audio-Warteschlange abgespielt.
         </p>
       </section>
 

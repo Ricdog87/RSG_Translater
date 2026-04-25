@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLanguageLabel, languages, type LanguageCode } from "@/lib/languages";
+import { getLanguageLabel, getTranslationLanguageName, languages, type LanguageCode } from "@/lib/languages";
 import type { Speaker, TranslateResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
           },
           {
             role: "user",
-            content: `Translate from ${getLanguageLabel(sourceLanguage)} to ${getLanguageLabel(targetLanguage)}:\n\n${originalText}`
+            content: `Translate from ${getTranslationLanguageName(sourceLanguage)} (${getLanguageLabel(sourceLanguage)}) to ${getTranslationLanguageName(targetLanguage)} (${getLanguageLabel(targetLanguage)}). Return only translated text in ${getTranslationLanguageName(targetLanguage)}.\n\n${originalText}`
           }
         ]
       })
