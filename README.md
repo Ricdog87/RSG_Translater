@@ -22,7 +22,7 @@ Mobile-first MVP für eine Push-to-talk Simultan-Übersetzungs-App in Recruiting
 - TypeScript
 - Tailwind CSS
 - Next.js API Route
-- OpenAI API
+- OpenAI API (Fallback: OpenRouter)
 
 ## OpenAI
 
@@ -41,10 +41,19 @@ cp .env.example .env.local
 Dann in `.env.local` den API-Key setzen:
 
 ```bash
+# Primär: OpenAI
 OPENAI_API_KEY=sk-proj-...
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_BASE_URL=https://api.openai.com/v1/chat/completions
+
+# Optionaler Fallback: OpenRouter (falls OPENAI_API_KEY fehlt)
+OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
 ```
+
+Priorität: Wenn `OPENAI_API_KEY` gesetzt ist, wird OpenAI verwendet.  
+Wenn `OPENAI_API_KEY` fehlt und `OPENROUTER_API_KEY` gesetzt ist, nutzt die App OpenRouter.
 
 ## Entwicklung starten
 
@@ -70,10 +79,10 @@ npm run start
 ## Deployment auf Vercel
 
 1. Repository mit Vercel verbinden.
-2. Environment Variable `OPENAI_API_KEY` in Vercel setzen.
+2. Environment Variable `OPENAI_API_KEY` setzen (oder alternativ `OPENROUTER_API_KEY` als Fallback).
 3. Deploy starten.
 
-Die API Route ist serverseitig, der OpenAI-Key wird nicht an den Browser ausgeliefert.
+Die API Route ist serverseitig, API-Keys werden nicht an den Browser ausgeliefert.
 
 ## Datenschutz-MVP
 

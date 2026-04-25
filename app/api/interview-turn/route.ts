@@ -26,6 +26,13 @@ type OpenAIResponse = {
   };
 };
 
+type ProviderConfig = {
+  name: "openai" | "openrouter";
+  apiKey: string;
+  url: string;
+  model: string;
+};
+
 function looksLikeHtmlDocument(value: string) {
   const normalized = value.trim().toLowerCase();
   return normalized.startsWith("<!doctype html") || normalized.startsWith("<html");
@@ -37,7 +44,7 @@ function sanitizeProviderError(raw: string, fallbackMessage: string) {
   }
 
   if (looksLikeHtmlDocument(raw)) {
-    return "Der konfigurierte Übersetzungs-Endpunkt liefert HTML statt JSON (z. B. Login/Auth-Seite). Bitte OPENAI_BASE_URL prüfen.";
+    return "Der konfigurierte Übersetzungs-Endpunkt liefert HTML statt JSON (z. B. Login/Auth-Seite). Bitte OPENAI_BASE_URL/OPENROUTER_BASE_URL prüfen.";
   }
 
   return raw.slice(0, 240);
@@ -103,10 +110,24 @@ async function readProviderResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
-  const openAIApiKey = process.env.OPENAI_API_KEY;
+  const provider: ProviderConfig | null = process.env.OPENAI_API_KEY
+    ? {
+        name: "openai",
+        apiKey: process.env.OPENAI_API_KEY,
+        url: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/chat/completions",
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini"
+      }
+    : process.env.OPENROUTER_API_KEY
+      ? {
+          name: "openrouter",
+          apiKey: process.env.OPENROUTER_API_KEY,
+          url: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions",
+          model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini"
+        }
+      : null;
 
-  if (!openAIApiKey) {
-    return jsonError("OPENAI_API_KEY ist nicht konfiguriert.", 500);
+  if (!provider) {
+    return jsonError("OPENAI_API_KEY oder OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
   }
 
   const body = await readJsonBody(request);
@@ -129,16 +150,28 @@ export async function POST(request: Request) {
   const targetLanguage = body.speaker === "customer" ? body.languageB : body.languageA;
 
   try {
-    const openAIUrl = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/chat/completions";
-    const response = await fetch(openAIUrl, {
+    const response = await fetch(provider.url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAIApiKey}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${provider.apiKey}`,
+        "Content-Type": "application/json",
+        ...(provider.name === "openrouter"
+          ? {
+              "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://rsg-translater.vercel.app",
+              "X-Title": "RSG Translate"
+            }
+          : {})
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        model: provider.model,
         temperature: 0.2,
+        ...(provider.name === "openrouter"
+          ? {
+              provider: {
+                data_collection: "deny"
+              }
+            }
+          : {}),
         messages: [
           {
             role: "system",
@@ -156,8 +189,13 @@ export async function POST(request: Request) {
     const { data, raw } = await readProviderResponse(response);
 
     if (!response.ok) {
-      const providerMessage = data?.error?.message ?? sanitizeProviderError(raw, "OpenAI konnte die Übersetzung nicht erzeugen.");
-      return jsonError(providerMessage || "OpenAI konnte die Übersetzung nicht erzeugen.", response.status);
+      const providerMessage =
+        data?.error?.message ??
+        sanitizeProviderError(raw, `${provider.name === "openai" ? "OpenAI" : "OpenRouter"} konnte die Übersetzung nicht erzeugen.`);
+      return jsonError(
+        providerMessage || `${provider.name === "openai" ? "OpenAI" : "OpenRouter"} konnte die Übersetzung nicht erzeugen.`,
+        response.status
+      );
     }
 
     const translatedText = data?.choices?.[0]?.message?.content?.trim();
@@ -172,7 +210,7 @@ export async function POST(request: Request) {
       translatedText,
       sourceLanguage,
       targetLanguage,
-      provider: "openai"
+      provider: provider.name
     };
 
     return jsonSuccess(payload);
