@@ -102,6 +102,15 @@ Die API Route ist serverseitig, API-Keys werden nicht an den Browser ausgeliefer
 3. `ALLOW_CLIENT_API_KEY_OVERRIDE=false` und `NEXT_PUBLIC_ALLOW_API_KEY_OVERRIDE=false` sicherstellen.
 4. Datenschutz und Impressum unter `/privacy` und `/imprint` mit finalen Rechtsdaten befüllen.
 5. Build-Pipeline mit `npm run typecheck` und `npm run build` als Pflichtchecks verwenden.
+6. SEO/Indexing prüfen: `robots.txt` und `sitemap.xml` werden automatisch aus `app/robots.ts` und `app/sitemap.ts` erzeugt.
+
+## CI / Qualitätssicherung
+
+- GitHub Actions Workflow: `.github/workflows/ci.yml`
+- Führt bei Push/PR automatisch aus:
+  - `npm ci`
+  - `npm run typecheck`
+  - `npm run build`
 
 ## Datenschutz-MVP
 
