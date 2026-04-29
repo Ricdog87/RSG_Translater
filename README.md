@@ -60,6 +60,12 @@ Nach Änderungen an Environment-Variablen auf Vercel immer neu deployen, damit s
 Als Notfall-Fallback kann im Setup-Screen ein API-Key direkt eingegeben werden (nur im Browser-State, nicht persistent).
 Die App nutzt zusätzlich Timeout + kurzen Retry bei temporären Übersetzungsfehlern (z. B. 5xx/429), um Live-Gespräche stabiler zu halten.
 
+### Produktions-Härtung (empfohlen für Verkauf/App-Store)
+
+- `ALLOW_CLIENT_API_KEY_OVERRIDE=false` (oder nicht setzen), damit keine API-Keys aus dem Client angenommen werden.
+- `NEXT_PUBLIC_ALLOW_API_KEY_OVERRIDE=false` (oder nicht setzen), damit das Override-Eingabefeld in der UI verborgen ist.
+- API-Keys ausschließlich serverseitig als Environment Variables hinterlegen (`OPENAI_API_KEY` oder `OPENROUTER_API_KEY`).
+
 ## Entwicklung starten
 
 ```bash

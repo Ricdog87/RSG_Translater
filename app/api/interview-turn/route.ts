@@ -8,6 +8,7 @@ export const preferredRegion = "fra1";
 const PROVIDER_TIMEOUT_MS = 20000;
 
 const validLanguageCodes = new Set(languages.map((language) => language.code));
+const ALLOW_CLIENT_API_KEY_OVERRIDE = process.env.ALLOW_CLIENT_API_KEY_OVERRIDE === "true";
 
 type TranslateRequest = {
   speaker?: Speaker;
@@ -144,7 +145,7 @@ export async function POST(request: Request) {
     return jsonError("Ungültige Anfrage. Bitte erneut versuchen.");
   }
 
-  const overrideKey = body.apiKeyOverride?.trim();
+  const overrideKey = ALLOW_CLIENT_API_KEY_OVERRIDE ? body.apiKeyOverride?.trim() : undefined;
   const openAIApiKey = firstConfiguredEnv([
     "OPENAI_API_KEY",
     "OPEN_AI_API_KEY",

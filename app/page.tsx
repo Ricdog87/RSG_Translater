@@ -23,6 +23,7 @@ type AppMode = "setup" | "interview";
 type TranscriptView = "translated" | "original";
 const TRANSLATION_TIMEOUT_MS = 20000;
 const MAX_TRANSLATION_RETRIES = 1;
+const ENABLE_API_KEY_OVERRIDE = process.env.NEXT_PUBLIC_ALLOW_API_KEY_OVERRIDE === "true";
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -499,20 +500,22 @@ export default function Home() {
                   Ich habe die Teilnehmenden informiert und darf erkannten Interviewtext zur Übersetzung an OpenAI/OpenRouter senden.
                 </span>
               </label>
-              <label className="mt-3 block text-sm leading-6 text-zinc-700">
-                <span className="mb-1 block font-semibold text-zinc-900">API-Key Fallback (nur wenn Server-Key fehlt)</span>
-                <input
-                  type="password"
-                  value={apiKeyOverride}
-                  onChange={(event) => setApiKeyOverride(event.target.value)}
-                  placeholder="sk-... (optional)"
-                  autoComplete="off"
-                  className="h-11 w-full rounded-lg border border-zinc-200 bg-white/90 px-3 text-sm text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
-                />
-                <span className="mt-1 block text-xs text-zinc-500">
-                  Wird nur für diese Sitzung genutzt, nicht gespeichert. Für Produktion bitte Server-Env in Vercel setzen.
-                </span>
-              </label>
+              {ENABLE_API_KEY_OVERRIDE ? (
+                <label className="mt-3 block text-sm leading-6 text-zinc-700">
+                  <span className="mb-1 block font-semibold text-zinc-900">API-Key Fallback (nur wenn Server-Key fehlt)</span>
+                  <input
+                    type="password"
+                    value={apiKeyOverride}
+                    onChange={(event) => setApiKeyOverride(event.target.value)}
+                    placeholder="sk-... (optional)"
+                    autoComplete="off"
+                    className="h-11 w-full rounded-lg border border-zinc-200 bg-white/90 px-3 text-sm text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
+                  />
+                  <span className="mt-1 block text-xs text-zinc-500">
+                    Wird nur für diese Sitzung genutzt, nicht gespeichert. Für Produktion bitte Server-Env in Vercel setzen.
+                  </span>
+                </label>
+              ) : null}
               <label className="mt-3 flex gap-3 text-sm leading-6 text-zinc-700">
                 <input
                   type="checkbox"
