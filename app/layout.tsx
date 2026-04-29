@@ -6,8 +6,19 @@ export const metadata: Metadata = {
   description: "Push-to-talk Simultan-Übersetzung für Recruiting-Interviews",
   applicationName: "RSG Translate",
   manifest: "/manifest.webmanifest",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "RSG Translate"
+  },
   icons: {
     icon: "/icon.svg"
+  },
+  openGraph: {
+    title: "RSG Translate",
+    description: "Push-to-talk Simultan-Übersetzung für Recruiting-Interviews",
+    type: "website"
   }
 };
 

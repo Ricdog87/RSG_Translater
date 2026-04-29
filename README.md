@@ -95,6 +95,14 @@ npm run start
 
 Die API Route ist serverseitig, API-Keys werden nicht an den Browser ausgeliefert.
 
+## Launch-Checklist (Production)
+
+1. `.env.example` als Vorlage nutzen und alle Production-Variablen in Vercel setzen.
+2. `/api/health` vor Go-Live prüfen (Status `ok`, Provider konfiguriert).
+3. `ALLOW_CLIENT_API_KEY_OVERRIDE=false` und `NEXT_PUBLIC_ALLOW_API_KEY_OVERRIDE=false` sicherstellen.
+4. Datenschutz und Impressum unter `/privacy` und `/imprint` mit finalen Rechtsdaten befüllen.
+5. Build-Pipeline mit `npm run typecheck` und `npm run build` als Pflichtchecks verwenden.
+
 ## Datenschutz-MVP
 
 - Das Backend speichert keine Interviewdaten.

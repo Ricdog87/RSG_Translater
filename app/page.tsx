@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ChevronDown,
   Download,
@@ -738,6 +739,14 @@ export default function Home() {
 
         <TranscriptList entries={entries.slice().reverse()} showTranslated={transcriptView === "translated"} />
       </section>
+      <footer className="no-print mt-4 flex gap-4 pb-8 text-xs text-zinc-500">
+        <Link href="/privacy" className="underline underline-offset-2">
+          Datenschutz
+        </Link>
+        <Link href="/imprint" className="underline underline-offset-2">
+          Impressum
+        </Link>
+      </footer>
     </main>
   );
 }
