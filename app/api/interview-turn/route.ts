@@ -13,6 +13,7 @@ type TranslateRequest = {
   originalText?: string;
   languageA?: LanguageCode;
   languageB?: LanguageCode;
+  apiKeyOverride?: string;
 };
 
 type OpenAIResponse = {
@@ -122,6 +123,13 @@ async function readProviderResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
+  const body = await readJsonBody(request);
+
+  if (!body) {
+    return jsonError("Ungültige Anfrage. Bitte erneut versuchen.");
+  }
+
+  const overrideKey = body.apiKeyOverride?.trim();
   const openAIApiKey = firstConfiguredEnv([
     "OPENAI_API_KEY",
     "OPEN_AI_API_KEY",
@@ -139,7 +147,25 @@ export async function POST(request: Request) {
     "NEXT_PUBLIC_OPEN_ROUTER_API_KEY"
   ]);
 
-  const provider: ProviderConfig | null = openAIApiKey
+  const providerFromOverride: ProviderConfig | null = overrideKey
+    ? overrideKey.startsWith("sk-or-")
+      ? {
+          name: "openrouter",
+          apiKey: overrideKey,
+          url: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1/chat/completions",
+          model: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini"
+        }
+      : {
+          name: "openai",
+          apiKey: overrideKey,
+          url: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1/chat/completions",
+          model: process.env.OPENAI_MODEL ?? "gpt-4o-mini"
+        }
+    : null;
+
+  const provider: ProviderConfig | null = providerFromOverride
+    ? providerFromOverride
+    : openAIApiKey
     ? {
         name: "openai",
         apiKey: openAIApiKey,
@@ -160,12 +186,6 @@ export async function POST(request: Request) {
       "Kein API-Key gefunden. Setze OPENAI_API_KEY oder OPENROUTER_API_KEY (auch erkannt: OPEN_AI_API_KEY, OPEN_ROUTER_API_KEY, NEXT_PUBLIC_OPENAI_API_KEY, NEXT_PUBLIC_OPENROUTER_API_KEY). Nach dem Setzen bitte neu deployen.",
       500
     );
-  }
-
-  const body = await readJsonBody(request);
-
-  if (!body) {
-    return jsonError("Ungültige Anfrage. Bitte erneut versuchen.");
   }
 
   const originalText = body.originalText?.trim();

@@ -52,6 +52,7 @@ export default function Home() {
   const [interviewTitle, setInterviewTitle] = useState("Recruiting Interview");
   const [customerName, setCustomerName] = useState("Kunde");
   const [candidateName, setCandidateName] = useState("Bewerber");
+  const [apiKeyOverride, setApiKeyOverride] = useState("");
   const [manualText, setManualText] = useState<Record<Speaker, string>>({
     customer: "",
     candidate: ""
@@ -177,7 +178,7 @@ export default function Home() {
       return {
         data: null,
         error: isHtmlError
-          ? "Server lieferte HTML statt API-JSON (häufig durch Auth/Login-Schutz). Bitte Deployment/OPENROUTER_BASE_URL prüfen."
+          ? "Server lieferte HTML statt API-JSON (häufig durch Auth/Login-Schutz). Bitte Deployment/OPENAI_BASE_URL/OPENROUTER_BASE_URL prüfen."
           : raw.slice(0, 240) || "Serverantwort konnte nicht gelesen werden."
       };
     }
@@ -196,7 +197,7 @@ export default function Home() {
 
     if (!translationConsent) {
       setStatus("Bereit für das Interview.");
-      setError("Bitte zuerst bestätigen, dass erkannter Text zur Übersetzung an OpenRouter gesendet werden darf.");
+      setError("Bitte zuerst bestätigen, dass erkannter Text zur Übersetzung an den Sprachdienst gesendet werden darf.");
       return;
     }
 
@@ -214,7 +215,8 @@ export default function Home() {
           speaker,
           originalText,
           languageA,
-          languageB
+          languageB,
+          apiKeyOverride: apiKeyOverride.trim() || undefined
         })
       });
 
@@ -404,7 +406,21 @@ export default function Home() {
                   className="mt-1 size-4 accent-zinc-950"
                 />
                 <span>
-                  Ich habe die Teilnehmenden informiert und darf erkannten Interviewtext zur Übersetzung an OpenRouter senden.
+                  Ich habe die Teilnehmenden informiert und darf erkannten Interviewtext zur Übersetzung an OpenAI/OpenRouter senden.
+                </span>
+              </label>
+              <label className="mt-3 block text-sm leading-6 text-zinc-700">
+                <span className="mb-1 block font-semibold text-zinc-900">API-Key Fallback (nur wenn Server-Key fehlt)</span>
+                <input
+                  type="password"
+                  value={apiKeyOverride}
+                  onChange={(event) => setApiKeyOverride(event.target.value)}
+                  placeholder="sk-... (optional)"
+                  autoComplete="off"
+                  className="h-11 w-full rounded-lg border border-zinc-200 bg-white/90 px-3 text-sm text-zinc-950 outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
+                />
+                <span className="mt-1 block text-xs text-zinc-500">
+                  Wird nur für diese Sitzung genutzt, nicht gespeichert. Für Produktion bitte Server-Env in Vercel setzen.
                 </span>
               </label>
               <label className="mt-3 flex gap-3 text-sm leading-6 text-zinc-700">
