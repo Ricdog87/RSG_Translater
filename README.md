@@ -55,7 +55,8 @@ OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
 Priorität: Wenn `OPENAI_API_KEY` gesetzt ist, wird OpenAI verwendet.  
 Wenn `OPENAI_API_KEY` fehlt und `OPENROUTER_API_KEY` gesetzt ist, nutzt die App OpenRouter.
 
-Kompatibilitäts-Aliasse werden ebenfalls gelesen: `OPEN_AI_API_KEY`, `OPEN_ROUTER_API_KEY`, `OPENAI_KEY`, `OPENROUTER_KEY`.
+Kompatibilitäts-Aliasse werden ebenfalls gelesen: `OPEN_AI_API_KEY`, `OPEN_ROUTER_API_KEY`, `OPENAI_KEY`, `OPENROUTER_KEY`, `NEXT_PUBLIC_OPENAI_API_KEY`, `NEXT_PUBLIC_OPENROUTER_API_KEY`.
+Nach Änderungen an Environment-Variablen auf Vercel immer neu deployen, damit sie in der Function verfügbar sind.
 
 ## Entwicklung starten
 

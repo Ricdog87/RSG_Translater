@@ -122,12 +122,21 @@ async function readProviderResponse(response: Response) {
 }
 
 export async function POST(request: Request) {
-  const openAIApiKey = firstConfiguredEnv(["OPENAI_API_KEY", "OPEN_AI_API_KEY", "OPENAI_KEY", "OPENAI_PAY_KEY"]);
+  const openAIApiKey = firstConfiguredEnv([
+    "OPENAI_API_KEY",
+    "OPEN_AI_API_KEY",
+    "OPENAI_KEY",
+    "OPENAI_PAY_KEY",
+    "NEXT_PUBLIC_OPENAI_API_KEY",
+    "NEXT_PUBLIC_OPEN_AI_API_KEY"
+  ]);
   const openRouterApiKey = firstConfiguredEnv([
     "OPENROUTER_API_KEY",
     "OPEN_ROUTER_API_KEY",
     "OPENROUTER_KEY",
-    "OPENROUTER_PAY_KEY"
+    "OPENROUTER_PAY_KEY",
+    "NEXT_PUBLIC_OPENROUTER_API_KEY",
+    "NEXT_PUBLIC_OPEN_ROUTER_API_KEY"
   ]);
 
   const provider: ProviderConfig | null = openAIApiKey
@@ -148,7 +157,7 @@ export async function POST(request: Request) {
 
   if (!provider) {
     return jsonError(
-      "Kein API-Key gefunden. Setze OPENAI_API_KEY oder OPENROUTER_API_KEY (auch unterstützt: OPEN_AI_API_KEY, OPEN_ROUTER_API_KEY).",
+      "Kein API-Key gefunden. Setze OPENAI_API_KEY oder OPENROUTER_API_KEY (auch erkannt: OPEN_AI_API_KEY, OPEN_ROUTER_API_KEY, NEXT_PUBLIC_OPENAI_API_KEY, NEXT_PUBLIC_OPENROUTER_API_KEY). Nach dem Setzen bitte neu deployen.",
       500
     );
   }
