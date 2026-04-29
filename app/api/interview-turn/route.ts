@@ -5,6 +5,7 @@ import type { Speaker, TranslateResponse } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 export const preferredRegion = "fra1";
+const PROVIDER_TIMEOUT_MS = 20000;
 
 const validLanguageCodes = new Set(languages.map((language) => language.code));
 
@@ -122,6 +123,20 @@ async function readProviderResponse(response: Response) {
   }
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = PROVIDER_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function POST(request: Request) {
   const body = await readJsonBody(request);
 
@@ -202,7 +217,7 @@ export async function POST(request: Request) {
   const targetLanguage = body.speaker === "customer" ? body.languageB : body.languageA;
 
   try {
-    const response = await fetch(provider.url, {
+    const response = await fetchWithTimeout(provider.url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${provider.apiKey}`,
@@ -267,6 +282,10 @@ export async function POST(request: Request) {
 
     return jsonSuccess(payload);
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return jsonError("Zeitüberschreitung beim Übersetzungsdienst. Bitte erneut versuchen.", 504);
+    }
+
     console.error("Interview turn failed", error instanceof Error ? error.message : "unknown error");
     return jsonError("Der Interview-Turn konnte nicht verarbeitet werden.", 500);
   }

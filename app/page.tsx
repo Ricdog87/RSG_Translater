@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   Download,
@@ -21,6 +21,8 @@ import { getSpeechRecognitionConstructor, type SpeechRecognitionLike } from "@/l
 
 type AppMode = "setup" | "interview";
 type TranscriptView = "translated" | "original";
+const TRANSLATION_TIMEOUT_MS = 20000;
+const MAX_TRANSLATION_RETRIES = 1;
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -61,10 +63,51 @@ export default function Home() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const speechQueueRef = useRef<SpeechSynthesisUtterance[]>([]);
   const speechActiveRef = useRef(false);
+  const speechPrimedRef = useRef(false);
   const transcriptRef = useRef("");
   const speakerRef = useRef<Speaker | null>(null);
   const shouldSubmitRef = useRef(false);
   const isSubmittingRef = useRef(false);
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) {
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+
+    if (synth.getVoices().length > 0) {
+      return;
+    }
+
+    const loadVoices = () => synth.getVoices();
+    synth.addEventListener("voiceschanged", loadVoices);
+
+    return () => synth.removeEventListener("voiceschanged", loadVoices);
+  }, []);
+
+  function primeSpeechSynthesis() {
+    if (!("speechSynthesis" in window) || speechPrimedRef.current) {
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(" ");
+    utterance.volume = 0;
+    utterance.rate = 1;
+    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.cancel();
+    speechPrimedRef.current = true;
+  }
+
+  function isRetryableStatus(statusCode: number) {
+    return statusCode === 429 || statusCode >= 500;
+  }
+
+  function wait(milliseconds: number) {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, milliseconds);
+    });
+  }
 
   function startRecording(speaker: Speaker) {
     if (activeSpeaker || processingSpeaker) {
@@ -86,6 +129,7 @@ export default function Home() {
 
       const recognition = new Recognition();
       const sourceLanguage = speaker === "customer" ? languageA : languageB;
+      primeSpeechSynthesis();
 
       transcriptRef.current = "";
       recognitionRef.current = recognition;
@@ -206,31 +250,77 @@ export default function Home() {
     setStatus("Übersetze und spiele die Antwort vor...");
 
     try {
-      const response = await fetch("/api/interview-turn", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          speaker,
-          originalText,
-          languageA,
-          languageB,
-          apiKeyOverride: apiKeyOverride.trim() || undefined
-        })
-      });
+      let result: TranslateResponse | null = null;
+      let lastErrorMessage = "Übersetzung fehlgeschlagen.";
 
-      const { data, error: parseError } = await readApiResponse(response);
+      for (let attempt = 0; attempt <= MAX_TRANSLATION_RETRIES; attempt += 1) {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), TRANSLATION_TIMEOUT_MS);
 
-      if (parseError || !data) {
-        throw new Error(parseError ?? "Übersetzung fehlgeschlagen.");
+        try {
+          const response = await fetch("/api/interview-turn", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+              speaker,
+              originalText,
+              languageA,
+              languageB,
+              apiKeyOverride: apiKeyOverride.trim() || undefined
+            })
+          });
+
+          const { data, error: parseError } = await readApiResponse(response);
+
+          if (parseError || !data) {
+            throw new Error(parseError ?? "Übersetzung fehlgeschlagen.");
+          }
+
+          if (!response.ok) {
+            const providerError = ("error" in data ? data.error : null) ?? "Übersetzung fehlgeschlagen.";
+            lastErrorMessage = providerError;
+
+            if (attempt < MAX_TRANSLATION_RETRIES && isRetryableStatus(response.status)) {
+              await wait(450 * (attempt + 1));
+              continue;
+            }
+
+            throw new Error(providerError);
+          }
+
+          result = data as TranslateResponse;
+          break;
+        } catch (caughtError) {
+          const isAbort =
+            caughtError instanceof DOMException && caughtError.name === "AbortError"
+              ? true
+              : caughtError instanceof Error && caughtError.name === "AbortError";
+          const message = isAbort
+            ? "Zeitüberschreitung bei der Übersetzung. Bitte Verbindung prüfen und erneut sprechen."
+            : caughtError instanceof Error
+              ? caughtError.message
+              : "Übersetzung fehlgeschlagen.";
+
+          lastErrorMessage = message;
+
+          if (attempt < MAX_TRANSLATION_RETRIES) {
+            await wait(450 * (attempt + 1));
+            continue;
+          }
+
+          throw new Error(message);
+        } finally {
+          window.clearTimeout(timeoutId);
+        }
       }
 
-      if (!response.ok) {
-        throw new Error("error" in data ? data.error : "Übersetzung fehlgeschlagen.");
+      if (!result) {
+        throw new Error(lastErrorMessage);
       }
 
-      const result = data as TranslateResponse;
       const createdAt = new Date().toISOString();
 
       setEntries((current) => [
@@ -246,7 +336,7 @@ export default function Home() {
         },
         ...current
       ]);
-      setStatus("Übersetzung wird abgespielt.");
+      setStatus(`Übersetzung wird abgespielt (${result.provider === "openai" ? "OpenAI" : "OpenRouter"}).`);
 
       speak(result.translatedText, result.targetLanguage);
     } catch (caughtError) {

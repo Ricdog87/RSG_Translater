@@ -58,6 +58,7 @@ Wenn `OPENAI_API_KEY` fehlt und `OPENROUTER_API_KEY` gesetzt ist, nutzt die App 
 Kompatibilitäts-Aliasse werden ebenfalls gelesen: `OPEN_AI_API_KEY`, `OPEN_ROUTER_API_KEY`, `OPENAI_KEY`, `OPENROUTER_KEY`, `NEXT_PUBLIC_OPENAI_API_KEY`, `NEXT_PUBLIC_OPENROUTER_API_KEY`.
 Nach Änderungen an Environment-Variablen auf Vercel immer neu deployen, damit sie in der Function verfügbar sind.
 Als Notfall-Fallback kann im Setup-Screen ein API-Key direkt eingegeben werden (nur im Browser-State, nicht persistent).
+Die App nutzt zusätzlich Timeout + kurzen Retry bei temporären Übersetzungsfehlern (z. B. 5xx/429), um Live-Gespräche stabiler zu halten.
 
 ## Entwicklung starten
 
