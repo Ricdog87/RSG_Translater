@@ -20,7 +20,7 @@ export default function ImpressumPage() {
       </Link>
       <article className="rounded-3xl border border-white/80 bg-white/90 p-6 shadow-[0_30px_70px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:p-10">
         <h1 className="mb-2 text-3xl font-semibold tracking-tight text-zinc-950">Impressum</h1>
-        <p className="mb-8 text-sm font-medium text-zinc-500">Angaben gemäß § 5 TMG</p>
+        <p className="mb-8 text-sm font-medium text-zinc-500">Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz)</p>
 
         <section className="space-y-2 text-sm leading-7 text-zinc-700">
           <h2 className="text-base font-semibold text-zinc-950">Anbieter</h2>
@@ -86,19 +86,42 @@ export default function ImpressumPage() {
         </section>
 
         <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
-          <h2 className="text-base font-semibold text-zinc-950">EU-Streitschlichtung</h2>
+          <h2 className="text-base font-semibold text-zinc-950">Verbraucherstreitbeilegung</h2>
           <p>
-            Plattform der EU-Kommission zur Online-Streitbeilegung:{" "}
-            <a
-              href="https://ec.europa.eu/consumers/odr"
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold text-zinc-950 underline"
-            >
-              ec.europa.eu/consumers/odr
-            </a>
-            . Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
-            Verbraucherschlichtungsstelle teilzunehmen.
+            Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer
+            Verbraucherschlichtungsstelle im Sinne des Verbraucherstreitbeilegungsgesetzes (VSBG) teilzunehmen.
+          </p>
+          <p>
+            Hinweis: Die Online-Streitbeilegungsplattform der EU-Kommission (ODR) wurde zum 20. Juli 2025 eingestellt.
+          </p>
+        </section>
+
+        <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
+          <h2 className="text-base font-semibold text-zinc-950">Haftung für Inhalte</h2>
+          <p>
+            Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen
+            Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter jedoch nicht verpflichtet,
+            übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf
+            eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von
+            Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt.
+          </p>
+        </section>
+
+        <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
+          <h2 className="text-base font-semibold text-zinc-950">Haftung für Links</h2>
+          <p>
+            Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben.
+            Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten
+            Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.
+          </p>
+        </section>
+
+        <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
+          <h2 className="text-base font-semibold text-zinc-950">Urheberrecht</h2>
+          <p>
+            Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen
+            Urheberrecht. Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen
+            des Urheberrechtes bedürfen der schriftlichen Zustimmung der RSG Recruiting Solutions Group GmbH.
           </p>
         </section>
       </article>
