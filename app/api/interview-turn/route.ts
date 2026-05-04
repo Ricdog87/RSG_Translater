@@ -9,6 +9,10 @@ export const preferredRegion = "fra1";
 const validLanguageCodes = new Set(languages.map((language) => language.code));
 const MAX_INPUT_CHARS = 4000;
 
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 100;
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
 type TranslateRequest = {
   speaker?: Speaker;
   originalText?: string;
@@ -52,13 +56,49 @@ function isSpeaker(value: unknown): value is Speaker {
   return value === "customer" || value === "candidate";
 }
 
-function jsonError(message: string, status = 400) {
+function getClientId(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const first = forwardedFor.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return request.headers.get("x-real-ip") ?? "anonymous";
+}
+
+function rateLimit(request: Request) {
+  const id = getClientId(request);
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(id);
+
+  if (!bucket || bucket.resetAt <= now) {
+    rateLimitBuckets.set(id, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    if (rateLimitBuckets.size > 5000) {
+      for (const [key, value] of rateLimitBuckets) {
+        if (value.resetAt <= now) rateLimitBuckets.delete(key);
+      }
+    }
+    return { allowed: true as const };
+  }
+
+  if (bucket.count >= RATE_LIMIT_MAX) {
+    return {
+      allowed: false as const,
+      retryAfter: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000))
+    };
+  }
+
+  bucket.count += 1;
+  return { allowed: true as const };
+}
+
+function jsonError(message: string, status = 400, extraHeaders: Record<string, string> = {}) {
   return NextResponse.json(
     { error: message },
     {
       status,
       headers: {
-        "Cache-Control": "no-store"
+        "Cache-Control": "no-store",
+        ...extraHeaders
       }
     }
   );
@@ -84,28 +124,28 @@ async function readOpenRouterResponse(response: Response) {
   const raw = await response.text();
 
   if (!raw.trim()) {
-    return {
-      data: null,
-      raw
-    };
+    return { data: null, raw };
   }
 
   try {
-    return {
-      data: JSON.parse(raw) as OpenRouterResponse,
-      raw
-    };
+    return { data: JSON.parse(raw) as OpenRouterResponse, raw };
   } catch {
-    return {
-      data: null,
-      raw
-    };
+    return { data: null, raw };
   }
 }
 
 export async function POST(request: Request) {
   if (!process.env.OPENROUTER_API_KEY) {
     return jsonError("OPENROUTER_API_KEY ist nicht konfiguriert.", 500);
+  }
+
+  const limit = rateLimit(request);
+  if (!limit.allowed) {
+    return jsonError(
+      "Zu viele Anfragen. Bitte kurz warten und erneut versuchen.",
+      429,
+      { "Retry-After": String(limit.retryAfter) }
+    );
   }
 
   const body = await readJsonBody(request);
