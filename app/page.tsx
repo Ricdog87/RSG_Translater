@@ -6,14 +6,17 @@ import {
   ArrowRight,
   ChevronDown,
   Download,
+  Ear,
   FileText,
   Keyboard,
   Languages,
   LoaderCircle,
   LockKeyhole,
+  Mic,
   RotateCcw,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Volume2
 } from "lucide-react";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { PushToTalkButton as SpeakerCard } from "@/components/PushToTalkButton";
@@ -509,9 +512,58 @@ export default function Home() {
               RSG Translate
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-zinc-600 sm:mt-5 sm:text-lg">
-              Sprachen wählen, Live-Modus starten, sprechen. Übersetzung erscheint und wird vorgelesen, während gesprochen
-              wird – keine Aufnahme-Tasten halten.
+              Live-Dolmetscher für Recruiting-Interviews. Wähle die Sprachen von Kunde und Bewerber, tippe auf den
+              Sprecher und sprich frei. Der Text wird in Echtzeit erkannt, übersetzt und in der Zielsprache vorgelesen.
             </p>
+          </div>
+
+          <div className="mb-6 rounded-3xl border border-white/80 bg-white/70 p-5 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.25)] backdrop-blur-xl sm:p-6">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">So funktioniert&apos;s</p>
+            <ol className="grid gap-3 sm:grid-cols-3">
+              <li className="flex gap-3 rounded-2xl border border-zinc-200 bg-white/90 p-3.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                  <Languages className="size-[18px]" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Schritt 1</p>
+                  <p className="text-sm font-semibold leading-snug text-zinc-950">Sprachen wählen</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    Eine Sprache pro Sprecher – die App übersetzt in beide Richtungen.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3 rounded-2xl border border-zinc-200 bg-white/90 p-3.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white">
+                  <Mic className="size-[18px]" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Schritt 2</p>
+                  <p className="text-sm font-semibold leading-snug text-zinc-950">Sprecher antippen</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    Mikrofon bleibt offen, bis nochmal getippt wird – kein Halten, keine Pausen.
+                  </p>
+                </div>
+              </li>
+              <li className="flex gap-3 rounded-2xl border border-zinc-200 bg-white/90 p-3.5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                  <Volume2 className="size-[18px]" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Schritt 3</p>
+                  <p className="text-sm font-semibold leading-snug text-zinc-950">Übersetzung hören</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    Jeder Satz erscheint im Transkript und wird in der Zielsprache vorgelesen.
+                  </p>
+                </div>
+              </li>
+            </ol>
+            <div className="mt-4 flex items-start gap-3 rounded-2xl bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
+              <Ear className="mt-0.5 size-4 shrink-0 text-zinc-700" aria-hidden="true" />
+              <p>
+                Tipp: Ein Lautsprecher mittig zwischen beiden Sprechern und ein gutes Mikrofon (Headset oder
+                Konferenzmikro) erhöhen die Erkennungsqualität spürbar.
+              </p>
+            </div>
           </div>
 
           <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-7">
@@ -567,6 +619,11 @@ export default function Home() {
               Live-Interview starten
               <ArrowRight className="size-5 transition group-hover:translate-x-0.5" aria-hidden="true" />
             </button>
+            {!translationConsent ? (
+              <p className="mt-3 text-center text-xs font-medium text-zinc-500">
+                Erst nach Bestätigung der Übersetzungs-Zustimmung verfügbar.
+              </p>
+            ) : null}
             {error ? (
               <p className="mt-3 text-sm font-semibold text-rose-700">{error}</p>
             ) : null}
