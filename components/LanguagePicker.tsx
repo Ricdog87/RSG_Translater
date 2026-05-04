@@ -4,24 +4,33 @@ import { languages, type LanguageCode } from "@/lib/languages";
 type LanguagePickerProps = {
   id: string;
   label: string;
+  hint?: string;
   value: LanguageCode;
   onChange: (value: LanguageCode) => void;
 };
 
-export function LanguagePicker({ id, label, value, onChange }: LanguagePickerProps) {
+export function LanguagePicker({ id, label, hint, value, onChange }: LanguagePickerProps) {
+  const current = languages.find((language) => language.code === value);
+
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-zinc-700">{label}</span>
+      <span className="mb-2 flex items-baseline justify-between">
+        <span className="text-sm font-semibold text-zinc-700">{label}</span>
+        {hint ? <span className="text-xs font-medium text-zinc-400">{hint}</span> : null}
+      </span>
       <span className="relative block">
+        <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-2xl">
+          {current?.flag}
+        </span>
         <select
           id={id}
           value={value}
           onChange={(event) => onChange(event.target.value as LanguageCode)}
-          className="h-14 w-full appearance-none rounded-lg border border-zinc-200 bg-white/90 px-4 pr-11 text-base font-semibold text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.04)] outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
+          className="h-16 w-full appearance-none rounded-2xl border border-zinc-200 bg-white pl-14 pr-12 text-base font-semibold text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.04)] outline-none transition focus:border-zinc-400 focus:ring-4 focus:ring-zinc-900/10"
         >
           {languages.map((language) => (
             <option key={language.code} value={language.code}>
-              {language.label} - {language.nativeName}
+              {language.flag} {language.label} · {language.nativeName}
             </option>
           ))}
         </select>

@@ -1,5 +1,5 @@
-import { Clock3, UserRound } from "lucide-react";
-import { getLanguageLabel } from "@/lib/languages";
+import { Clock3 } from "lucide-react";
+import { getLanguageFlag, getLanguageLabel } from "@/lib/languages";
 import type { TranscriptEntry } from "@/lib/types";
 
 type TranscriptListProps = {
@@ -14,43 +14,42 @@ function speakerName(entry: TranscriptEntry) {
 export function TranscriptList({ entries, showTranslated = true }: TranscriptListProps) {
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 bg-white/70 px-5 py-10 text-center text-sm font-medium text-zinc-500">
-        Das Interview-Transkript erscheint hier nach dem ersten Beitrag.
+      <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/70 px-5 py-12 text-center text-sm font-medium text-zinc-500">
+        Noch keine Beiträge. Sobald gesprochen wird, erscheinen Übersetzungen hier.
       </div>
     );
   }
 
   return (
-    <div className="space-y-0">
-      {entries.map((entry, index) => {
+    <ol className="space-y-3">
+      {entries.map((entry) => {
         const isCustomer = entry.speaker === "customer";
 
         return (
-          <article
+          <li
             key={entry.id}
             className={[
-              "relative border-l-2 bg-white/90 py-4 pl-4 pr-3",
-              index === 0 ? "rounded-t-lg border-t border-r" : "border-t border-r",
-              index === entries.length - 1 ? "rounded-b-lg border-b" : "",
-              isCustomer ? "border-l-zinc-950 border-zinc-200" : "border-l-zinc-400 border-zinc-200"
+              "rounded-2xl border bg-white/95 p-4 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.25)] backdrop-blur",
+              isCustomer ? "border-zinc-200" : "border-emerald-100"
             ].join(" ")}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <span
                   className={[
-                    "flex size-9 items-center justify-center rounded-full",
-                    isCustomer ? "bg-zinc-950 text-white" : "bg-zinc-100 text-zinc-700"
+                    "flex size-9 items-center justify-center rounded-xl text-base",
+                    isCustomer ? "bg-zinc-950 text-white" : "bg-emerald-100 text-emerald-700"
                   ].join(" ")}
+                  aria-hidden="true"
                 >
-                  <UserRound className="size-5" aria-hidden="true" />
+                  {getLanguageFlag(entry.sourceLanguage)}
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-zinc-950">
                     {speakerName(entry)} <span className="font-medium text-zinc-400">#{entry.turnNumber}</span>
                   </p>
                   <p className="text-xs font-medium text-zinc-500">
-                    {getLanguageLabel(entry.sourceLanguage)} nach {getLanguageLabel(entry.targetLanguage)}
+                    {getLanguageLabel(entry.sourceLanguage)} → {getLanguageLabel(entry.targetLanguage)}
                   </p>
                 </div>
               </div>
@@ -66,25 +65,37 @@ export function TranscriptList({ entries, showTranslated = true }: TranscriptLis
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase text-zinc-400">
-                  Gesprochen ({getLanguageLabel(entry.sourceLanguage)})
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Gesprochen · {getLanguageLabel(entry.sourceLanguage)}
                 </p>
                 <p className="whitespace-pre-wrap text-base leading-relaxed text-zinc-800">{entry.originalText}</p>
               </div>
               {showTranslated ? (
-                <div className="rounded-md bg-zinc-50 p-3">
-                  <p className="mb-1 text-xs font-semibold uppercase text-zinc-500">
-                    Übersetzung ({getLanguageLabel(entry.targetLanguage)})
+                <div
+                  className={[
+                    "rounded-xl p-3",
+                    isCustomer ? "bg-zinc-50" : "bg-emerald-50/70"
+                  ].join(" ")}
+                >
+                  <p
+                    className={[
+                      "mb-1 text-[11px] font-semibold uppercase tracking-wider",
+                      isCustomer ? "text-zinc-500" : "text-emerald-700"
+                    ].join(" ")}
+                  >
+                    Übersetzung · {getLanguageLabel(entry.targetLanguage)} {getLanguageFlag(entry.targetLanguage)}
                   </p>
-                  <p className="whitespace-pre-wrap text-base font-semibold leading-relaxed text-zinc-950">{entry.translatedText}</p>
+                  <p className="whitespace-pre-wrap text-base font-semibold leading-relaxed text-zinc-950">
+                    {entry.translatedText}
+                  </p>
                 </div>
               ) : null}
             </div>
-          </article>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

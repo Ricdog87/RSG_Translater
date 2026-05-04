@@ -6,27 +6,40 @@ export type LanguageOption = {
   nativeName: string;
   speechTag: string;
   translationName: string;
+  flag: string;
 };
 
 export const languages: LanguageOption[] = [
-  { code: "de", label: "Deutsch", nativeName: "Deutsch", speechTag: "de-DE", translationName: "German" },
-  { code: "fr", label: "Französisch", nativeName: "Français", speechTag: "fr-FR", translationName: "French" },
-  { code: "ar", label: "Arabisch", nativeName: "العربية", speechTag: "ar-SA", translationName: "Arabic" },
-  { code: "en", label: "Englisch", nativeName: "English", speechTag: "en-US", translationName: "English" },
-  { code: "es", label: "Spanisch", nativeName: "Español", speechTag: "es-ES", translationName: "Spanish" },
-  { code: "it", label: "Italienisch", nativeName: "Italiano", speechTag: "it-IT", translationName: "Italian" },
-  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR", translationName: "Turkish" },
-  { code: "sr", label: "Serbisch", nativeName: "Srpski", speechTag: "sr", translationName: "Serbian" }
+  { code: "de", label: "Deutsch", nativeName: "Deutsch", speechTag: "de-DE", translationName: "German", flag: "🇩🇪" },
+  { code: "fr", label: "Französisch", nativeName: "Français", speechTag: "fr-FR", translationName: "French", flag: "🇫🇷" },
+  { code: "en", label: "Englisch", nativeName: "English", speechTag: "en-US", translationName: "English", flag: "🇬🇧" },
+  { code: "es", label: "Spanisch", nativeName: "Español", speechTag: "es-ES", translationName: "Spanish", flag: "🇪🇸" },
+  { code: "it", label: "Italienisch", nativeName: "Italiano", speechTag: "it-IT", translationName: "Italian", flag: "🇮🇹" },
+  { code: "tr", label: "Türkisch", nativeName: "Türkçe", speechTag: "tr-TR", translationName: "Turkish", flag: "🇹🇷" },
+  { code: "ar", label: "Arabisch", nativeName: "العربية", speechTag: "ar-SA", translationName: "Arabic", flag: "🇸🇦" },
+  { code: "sr", label: "Serbisch", nativeName: "Srpski", speechTag: "sr-RS", translationName: "Serbian", flag: "🇷🇸" }
 ];
 
+export function getLanguage(code: string) {
+  return languages.find((language) => language.code === code);
+}
+
 export function getLanguageLabel(code: string) {
-  return languages.find((language) => language.code === code)?.label ?? code;
+  return getLanguage(code)?.label ?? code;
+}
+
+export function getLanguageNative(code: string) {
+  return getLanguage(code)?.nativeName ?? code;
+}
+
+export function getLanguageFlag(code: string) {
+  return getLanguage(code)?.flag ?? "";
 }
 
 export function getSpeechTag(code: string) {
-  return languages.find((language) => language.code === code)?.speechTag ?? code;
+  return getLanguage(code)?.speechTag ?? code;
 }
 
 export function getTranslationLanguageName(code: string) {
-  return languages.find((language) => language.code === code)?.translationName ?? code;
+  return getLanguage(code)?.translationName ?? code;
 }
