@@ -64,6 +64,11 @@ export default function Home() {
   const speakerRef = useRef<Speaker | null>(null);
   const shouldSubmitRef = useRef(false);
   const isSubmittingRef = useRef(false);
+  const activeSpeakerRef = useRef<Speaker | null>(null);
+  const processingSpeakerRef = useRef<Speaker | null>(null);
+
+  activeSpeakerRef.current = activeSpeaker;
+  processingSpeakerRef.current = processingSpeaker;
 
   function startRecording(speaker: Speaker) {
     if (activeSpeaker || processingSpeaker) {
@@ -292,7 +297,12 @@ export default function Home() {
     const next = speechQueueRef.current.shift();
 
     if (!next) {
-      setStatus("Bereit für die nächste Antwort.");
+      setStatus((current) => {
+        if (activeSpeakerRef.current || processingSpeakerRef.current) {
+          return current;
+        }
+        return "Bereit für die nächste Antwort.";
+      });
       return;
     }
 
@@ -451,11 +461,22 @@ export default function Home() {
           type="button"
           onClick={() => {
             setMode("setup");
+            if (recognitionRef.current) {
+              shouldSubmitRef.current = false;
+              try {
+                recognitionRef.current.abort();
+              } catch {
+                // ignore: recognition may already be stopped
+              }
+              recognitionRef.current = null;
+              speakerRef.current = null;
+            }
             if ("speechSynthesis" in window) {
               window.speechSynthesis.cancel();
             }
             speechQueueRef.current = [];
             speechActiveRef.current = false;
+            setActiveSpeaker(null);
             setStatus("Bereit für das Interview.");
           }}
           className="flex size-11 items-center justify-center rounded-lg border border-zinc-200 bg-white/90 text-zinc-700 shadow-[0_8px_24px_rgba(24,24,27,0.08)] backdrop-blur"
