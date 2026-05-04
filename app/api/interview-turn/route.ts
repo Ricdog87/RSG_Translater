@@ -7,6 +7,7 @@ export const maxDuration = 30;
 export const preferredRegion = "fra1";
 
 const validLanguageCodes = new Set(languages.map((language) => language.code));
+const MAX_INPUT_CHARS = 4000;
 
 type TranslateRequest = {
   speaker?: Speaker;
@@ -121,6 +122,10 @@ export async function POST(request: Request) {
 
   if (!originalText) {
     return jsonError("Es wurde kein erkannter Text übergeben.");
+  }
+
+  if (originalText.length > MAX_INPUT_CHARS) {
+    return jsonError(`Der Text ist zu lang (max. ${MAX_INPUT_CHARS} Zeichen).`, 413);
   }
 
   const sourceLanguage = body.speaker === "customer" ? body.languageA : body.languageB;
