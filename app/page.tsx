@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -174,7 +175,7 @@ export default function Home() {
       recognitionRef.current = null;
       if (sessionActiveRef.current) {
         window.setTimeout(() => {
-          if (sessionActiveRef.current) {
+          if (sessionActiveRef.current && !speechActiveRef.current && !recognitionRef.current) {
             startRecognitionInstance();
           }
         }, 250);
@@ -384,7 +385,19 @@ export default function Home() {
 
     const next = speechQueueRef.current.shift();
     if (!next) {
+      if (sessionActiveRef.current && !recognitionRef.current) {
+        startRecognitionInstance();
+      }
       return;
+    }
+
+    if (sessionActiveRef.current && recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
     }
 
     speechActiveRef.current = true;
@@ -476,7 +489,13 @@ export default function Home() {
 
   if (mode === "setup") {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 py-6 sm:max-w-3xl sm:px-6 sm:py-12">
+      <main
+        className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-8 pt-6 sm:max-w-3xl sm:px-6 sm:pb-12 sm:pt-12"
+        style={{
+          paddingTop: "calc(1.5rem + env(safe-area-inset-top))",
+          paddingBottom: "calc(2rem + env(safe-area-inset-bottom))"
+        }}
+      >
         <section className="flex flex-1 flex-col justify-center">
           <div className="mb-8">
             <div className="mb-5 inline-flex size-16 items-center justify-center rounded-3xl bg-zinc-950 text-white shadow-[0_20px_50px_-15px_rgba(15,23,42,0.55)]">
@@ -570,6 +589,18 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <footer className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200/70 pt-5 text-xs font-medium text-zinc-500">
+          <span>© {new Date().getFullYear()} RSG Translate</span>
+          <nav className="flex items-center gap-4">
+            <Link href="/impressum" className="transition hover:text-zinc-950">
+              Impressum
+            </Link>
+            <Link href="/datenschutz" className="transition hover:text-zinc-950">
+              Datenschutz
+            </Link>
+          </nav>
+        </footer>
       </main>
     );
   }
@@ -581,7 +612,13 @@ export default function Home() {
       : "Bereit – einen Sprecher antippen, um den Live-Modus zu starten.";
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-4 sm:max-w-5xl sm:px-6 sm:pb-14 sm:pt-6">
+    <main
+      className="mx-auto min-h-screen w-full max-w-md px-4 pb-10 pt-4 sm:max-w-5xl sm:px-6 sm:pb-14 sm:pt-6"
+      style={{
+        paddingTop: "calc(1rem + env(safe-area-inset-top))",
+        paddingBottom: "calc(2.5rem + env(safe-area-inset-bottom))"
+      }}
+    >
       <header className="no-print sticky top-0 z-30 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-zinc-200/70 bg-white/80 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-sm">
@@ -750,6 +787,18 @@ export default function Home() {
 
         <TranscriptList entries={entries.slice().reverse()} showTranslated={transcriptView === "translated"} />
       </section>
+
+      <footer className="no-print mt-8 flex flex-wrap items-center justify-between gap-3 text-xs font-medium text-zinc-500">
+        <span>© {new Date().getFullYear()} RSG Translate</span>
+        <nav className="flex items-center gap-4">
+          <Link href="/impressum" className="transition hover:text-zinc-950">
+            Impressum
+          </Link>
+          <Link href="/datenschutz" className="transition hover:text-zinc-950">
+            Datenschutz
+          </Link>
+        </nav>
+      </footer>
     </main>
   );
 }

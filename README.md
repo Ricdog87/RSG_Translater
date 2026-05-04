@@ -97,13 +97,18 @@ Hostinger mit EU-Server kann für das App-Hosting helfen. Für diese Next.js API
 
 ```text
 app/
-  api/interview-turn/route.ts  # OpenRouter Translation
+  api/interview-turn/route.ts  # OpenRouter Translation, mit Rate-Limit + Längen-Cap
+  api/health/route.ts          # Health-Check Endpoint
+  apple-icon.tsx               # 180×180 PNG für iOS Home-Screen
+  datenschutz/page.tsx         # Datenschutzerklärung (Vorlage)
+  impressum/page.tsx           # Impressum (Vorlage)
+  robots.ts                    # Suchmaschinen-Steuerung
   globals.css                  # Tailwind und globale Styles
   layout.tsx                   # Metadata und PWA Manifest
   page.tsx                     # Mobile Web-App
 components/
   LanguagePicker.tsx
-  PushToTalkButton.tsx
+  PushToTalkButton.tsx         # Speaker-Card mit Live-Toggle
   TranscriptList.tsx
 lib/
   languages.ts
@@ -113,6 +118,17 @@ public/
   icon.svg
   manifest.webmanifest
 ```
+
+## API-Hardening
+
+- `POST /api/interview-turn` ist auf 100 Anfragen pro IP und Minute limitiert (in-Memory, leaky bei mehreren Serverless-Instanzen — für robusten Schutz Vercel KV / Upstash anbinden).
+- `originalText` wird bei mehr als 4000 Zeichen mit HTTP 413 abgewiesen.
+- `GET /api/health` liefert Status und ob `OPENROUTER_API_KEY` gesetzt ist (für Uptime-Checks).
+
+## Rechtliche Pflichtseiten
+
+- `/impressum` und `/datenschutz` sind als Vorlagen mit klar markierten Platzhaltern hinterlegt.
+- Vor Go-Live durch konkrete Anbieter-Daten ersetzen und vom Datenschutzbeauftragten freigeben lassen.
 
 ## Realtime Streaming später
 
