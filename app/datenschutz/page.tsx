@@ -29,9 +29,21 @@ export default function DatenschutzPage() {
           <p>
             Verantwortlich für die Datenverarbeitung ist:
             <br />
-            [Firmenname / Inhaber:in]
+            RSG Recruiting Solutions Group GmbH
             <br />
-            [Anschrift], [E-Mail], [Telefon]
+            Am Heiligenhaus 9, 65207 Wiesbaden, Deutschland
+            <br />
+            Geschäftsführer: Ricardo Serrano
+            <br />
+            Telefon:{" "}
+            <a href="tel:+4917660772556" className="font-semibold text-zinc-950 underline">
+              +49 176 60772556
+            </a>
+            <br />
+            E-Mail:{" "}
+            <a href="mailto:info@recruiting-sg.de" className="font-semibold text-zinc-950 underline">
+              info@recruiting-sg.de
+            </a>
           </p>
         </section>
 
@@ -128,7 +140,12 @@ export default function DatenschutzPage() {
             Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20), Widerspruch (Art. 21) und Widerruf einer erteilten
             Einwilligung (Art. 7 Abs. 3) sowie das Recht auf Beschwerde bei einer Aufsichtsbehörde.
           </p>
-          <p>Kontakt für Datenschutzanfragen: [datenschutz@example.com]</p>
+          <p>
+            Kontakt für Datenschutzanfragen:{" "}
+            <a href="mailto:info@recruiting-sg.de" className="font-semibold text-zinc-950 underline">
+              info@recruiting-sg.de
+            </a>
+          </p>
         </section>
 
         <section className="mt-6 space-y-3 text-sm leading-7 text-zinc-700">
@@ -139,14 +156,7 @@ export default function DatenschutzPage() {
           </p>
         </section>
 
-        <section className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm leading-6 text-amber-900">
-          <p className="font-semibold">Hinweis vor Go-Live</p>
-          <p className="mt-1">
-            Diese Datenschutzerklärung ist eine Vorlage. Vor Veröffentlichung sind die Platzhalter zu ersetzen, ein
-            Auftragsverarbeitungsvertrag (AVV) mit OpenRouter und Vercel abzuschließen sowie die Hinweise vom
-            Datenschutzbeauftragten freigeben zu lassen.
-          </p>
-        </section>
+        <p className="mt-8 text-xs font-medium text-zinc-400">Stand: {new Date().getFullYear()}</p>
       </article>
     </main>
   );

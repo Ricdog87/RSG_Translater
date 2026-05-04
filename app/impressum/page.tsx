@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Impressum · RSG Translate",
-  description: "Anbieterkennzeichnung gemäß § 5 DDG / § 5 TMG.",
+  description: "Anbieterkennzeichnung der RSG Recruiting Solutions Group GmbH.",
   robots: { index: true, follow: true }
 };
 
@@ -20,57 +20,68 @@ export default function ImpressumPage() {
       </Link>
       <article className="rounded-3xl border border-white/80 bg-white/90 p-6 shadow-[0_30px_70px_-30px_rgba(15,23,42,0.25)] backdrop-blur sm:p-10">
         <h1 className="mb-2 text-3xl font-semibold tracking-tight text-zinc-950">Impressum</h1>
-        <p className="mb-8 text-sm font-medium text-zinc-500">Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz)</p>
+        <p className="mb-8 text-sm font-medium text-zinc-500">Angaben gemäß § 5 TMG</p>
 
         <section className="space-y-2 text-sm leading-7 text-zinc-700">
           <h2 className="text-base font-semibold text-zinc-950">Anbieter</h2>
           <p>
-            [Firmenname / Inhaber:in]
+            RSG Recruiting Solutions Group GmbH
             <br />
-            [Straße und Hausnummer]
+            Am Heiligenhaus 9
             <br />
-            [PLZ Ort]
+            65207 Wiesbaden
             <br />
-            [Land]
+            Deutschland
           </p>
+        </section>
+
+        <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
+          <h2 className="text-base font-semibold text-zinc-950">Marke</h2>
+          <p>RSG Translator ist eine Marke der RSG Recruiting Solutions Group GmbH.</p>
+        </section>
+
+        <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
+          <h2 className="text-base font-semibold text-zinc-950">Vertreten durch</h2>
+          <p>Ricardo Serrano, Geschäftsführer</p>
         </section>
 
         <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
           <h2 className="text-base font-semibold text-zinc-950">Kontakt</h2>
           <p>
-            Telefon: [Telefonnummer]
+            Telefon:{" "}
+            <a href="tel:+4917660772556" className="font-semibold text-zinc-950 underline">
+              +49 176 60772556
+            </a>
             <br />
-            E-Mail: [kontakt@example.com]
+            E-Mail:{" "}
+            <a href="mailto:info@recruiting-sg.de" className="font-semibold text-zinc-950 underline">
+              info@recruiting-sg.de
+            </a>
           </p>
-        </section>
-
-        <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
-          <h2 className="text-base font-semibold text-zinc-950">Vertretungsberechtigt</h2>
-          <p>[Geschäftsführung / Inhaber:in]</p>
         </section>
 
         <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
           <h2 className="text-base font-semibold text-zinc-950">Registereintrag</h2>
           <p>
-            Eingetragen im [Handelsregister / Vereinsregister]
+            Registergericht: Amtsgericht Wiesbaden
             <br />
-            Registergericht: [Amtsgericht]
-            <br />
-            Registernummer: [HRB / VR]
+            Registernummer: HRB 35951
           </p>
         </section>
 
         <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
           <h2 className="text-base font-semibold text-zinc-950">Umsatzsteuer-ID</h2>
-          <p>USt-IdNr. gemäß § 27 a UStG: [DE000000000]</p>
+          <p>USt-IdNr. gemäß § 27 a UStG: DE458027073</p>
         </section>
 
         <section className="mt-6 space-y-2 text-sm leading-7 text-zinc-700">
           <h2 className="text-base font-semibold text-zinc-950">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
           <p>
-            [Vor- und Nachname]
+            Ricardo Serrano
             <br />
-            [Anschrift wie oben]
+            Am Heiligenhaus 9
+            <br />
+            65207 Wiesbaden
           </p>
         </section>
 
@@ -88,14 +99,6 @@ export default function ImpressumPage() {
             </a>
             . Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
             Verbraucherschlichtungsstelle teilzunehmen.
-          </p>
-        </section>
-
-        <section className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm leading-6 text-amber-900">
-          <p className="font-semibold">Hinweis vor Go-Live</p>
-          <p className="mt-1">
-            Die in eckigen Klammern stehenden Angaben müssen vor der Veröffentlichung durch den Betreiber gesetzt werden.
-            Ohne korrekte Anbieterkennzeichnung ist der Betrieb in Deutschland abmahnfähig.
           </p>
         </section>
       </article>
